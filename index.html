@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moje appky</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: rgba(255,255,255,0.07);
+    --accent: #7c6af7;
+    --accent2: #3ecfb2;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 2.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .header-left h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-left p {
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .app-count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent2);
+    background: rgba(62,207,178,0.08);
+    border: 1px solid rgba(62,207,178,0.2);
+    padding: 0.4rem 0.8rem;
+    border-radius: 2rem;
+    white-space: nowrap;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    padding: 2.5rem;
+    max-width: 1200px;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 120px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .app-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+
+  .app-card:hover {
+    border-color: rgba(124,106,247,0.4);
+    background: var(--surface2);
+    transform: translateY(-2px);
+  }
+
+  .app-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .app-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+
+  .app-arrow {
+    color: var(--muted);
+    font-size: 1rem;
+    transition: color 0.2s, transform 0.2s;
+  }
+
+  .app-card:hover .app-arrow {
+    color: var(--accent);
+    transform: translate(2px, -2px);
+  }
+
+  .app-name {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .app-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.55;
+    font-family: var(--font-mono);
+  }
+
+  .app-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    padding: 0.25rem 0.6rem;
+    border-radius: 2rem;
+    background: rgba(124,106,247,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(124,106,247,0.2);
+    margin-top: auto;
+    width: fit-content;
+  }
+
+  /* empty state */
+  .empty {
+    grid-column: 1 / -1;
+    padding: 3rem 2rem;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .empty p {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.7;
+  }
+
+  .empty span {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+  }
+
+  footer {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem 2.5rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* =============================================
+     PŘIDAT NOVOU APPKU:
+     Zkopíruj blok níže a vlož ho do divu #app-grid
+     před komentář "konec appek"
+     =============================================
+
+  <a href="URL_APPKY" class="app-card" target="_blank">
+    <div class="app-card-top">
+      <div class="app-icon">🔧</div>
+      <span class="app-arrow">↗</span>
+    </div>
+    <div class="app-name">Název appky</div>
+    <div class="app-desc">Krátký popis co appka dělá.</div>
+    <span class="app-tag">kategorie</span>
+  </a>
+
+  ============================================= -->
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Moje appky</h1>
+    <p>matejda83-gif &nbsp;·&nbsp; osobní dashboard</p>
+  </div>
+  <div class="app-count" id="count">0 appek</div>
+</header>
+
+<main>
+  <div class="section-label">aplikace</div>
+
+  <div class="grid" id="app-grid">
+
+    <!-- APPKY ZAČÍNAJÍ ZDE -->
+
+    <!-- sem přidej nové appky -->
+
+    <!-- APPKY KONČÍ ZDE -->
+
+    <div class="empty" id="empty-state">
+      <span>⚡</span>
+      <p>Zatím žádné appky.<br>Až spolu něco vytvoříme, přidáme ji sem.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <span>matejda83-gif.github.io</span>
+  <span id="datum"></span>
+</footer>
+
+<script>
+  // datum v patičce
+  document.getElementById('datum').textContent = new Date().toLocaleDateString('cs-CZ', { year: 'numeric', month: 'long' });
+
+  // počet appek
+  const cards = document.querySelectorAll('.app-card');
+  const count = cards.length;
+  document.getElementById('count').textContent = count + (count === 1 ? ' appka' : count < 5 ? ' appky' : ' appek');
+  if (count > 0) document.getElementById('empty-state').style.display = 'none';
+</script>
+
+</body>
+</html>
