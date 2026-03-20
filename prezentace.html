@@ -3,597 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plánovač prezentací</title>
+<title>Planivac prezentaci</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c26;
-    --border: rgba(255,255,255,0.07);
-    --accent: #7c6af7;
-    --accent2: #3ecfb2;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --font-display: 'Syne', sans-serif;
-    --font-mono: 'Space Mono', monospace;
+    --bg: #0a0a0f; --surface: #13131a; --surface2: #1c1c26;
+    --border: rgba(255,255,255,0.07); --accent: #7c6af7; --accent2: #3ecfb2;
+    --text: #e8e8f0; --muted: #6b6b80;
+    --font-display: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
   }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-display);
-    min-height: 100vh;
-    padding: 0;
-  }
-
+  body { background: var(--bg); color: var(--text); font-family: var(--font-display); min-height: 100vh; }
   body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
   }
-
-  .wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 3rem 1.5rem;
-  }
-
+  .wrap { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem; }
   header { margin-bottom: 2.5rem; }
-
   header h1 {
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -0.03em;
     background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
-    margin-bottom: 0.5rem;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 0.5rem;
   }
-
-  header p {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-  }
-
-  .form-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.75rem;
-    margin-bottom: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .field label {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-  }
-
-  .field input, .field textarea {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: var(--font-display);
-    font-size: 0.95rem;
-    padding: 0.75rem 1rem;
-    outline: none;
-    transition: border-color 0.2s;
-    resize: none;
-  }
-
-  .field input:focus, .field textarea:focus {
-    border-color: rgba(124,106,247,0.5);
-  }
-
-  .field input::placeholder, .field textarea::placeholder {
-    color: var(--muted);
-    font-size: 0.88rem;
-  }
-
-  .row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-
-  .lang-toggle {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .lang-btn {
-    flex: 1;
-    padding: 0.6rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.15s;
-    letter-spacing: 0.05em;
-  }
-
-  .lang-btn.active {
-    border-color: rgba(124,106,247,0.5);
-    background: rgba(124,106,247,0.12);
-    color: var(--accent);
-  }
-
-  .generate-btn {
-    width: 100%;
-    padding: 0.9rem;
-    background: var(--accent);
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.15s;
-    letter-spacing: -0.01em;
-  }
-
+  header p { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; }
+  .form-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.75rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1.25rem; }
+  .field label { display: block; font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+  .field input, .field textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-display); font-size: 0.95rem; padding: 0.75rem 1rem; outline: none; transition: border-color 0.2s; resize: none; }
+  .field input:focus, .field textarea:focus { border-color: rgba(124,106,247,0.5); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--muted); font-size: 0.88rem; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .lang-toggle { display: flex; gap: 0.5rem; }
+  .lang-btn { flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer; transition: all 0.15s; }
+  .lang-btn.active { border-color: rgba(124,106,247,0.5); background: rgba(124,106,247,0.12); color: var(--accent); }
+  .generate-btn { width: 100%; padding: 0.9rem; background: var(--accent); border: none; border-radius: 10px; color: #fff; font-family: var(--font-display); font-size: 1rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.15s; }
   .generate-btn:hover { opacity: 0.88; transform: translateY(-1px); }
-  .generate-btn:active { transform: translateY(0); }
   .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  /* loading */
-  .loading {
-    display: none;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1.25rem;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--accent2);
-  }
-
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(62,207,178,0.2);
-    border-top-color: var(--accent2);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    flex-shrink: 0;
-  }
-
+  .loading { display: none; align-items: center; gap: 0.75rem; padding: 1.25rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent2); }
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(62,207,178,0.2); border-top-color: var(--accent2); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* results */
   #results { display: none; margin-top: 1.5rem; }
-
-  .results-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
-
-  .results-title {
-    font-size: 0.65rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-
-  .slide-count-badge {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--accent2);
-    background: rgba(62,207,178,0.08);
-    border: 1px solid rgba(62,207,178,0.2);
-    padding: 0.3rem 0.7rem;
-    border-radius: 2rem;
-  }
-
-  .slides-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .slide-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.3s, transform 0.3s;
-  }
-
-  .slide-card.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+  .results-title { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+  .slide-count-badge { font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent2); background: rgba(62,207,178,0.08); border: 1px solid rgba(62,207,178,0.2); padding: 0.3rem 0.7rem; border-radius: 2rem; }
+  .slides-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .slide-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; opacity: 0; transform: translateY(8px); transition: opacity 0.3s, transform 0.3s; }
+  .slide-card.visible { opacity: 1; transform: translateY(0); }
   .slide-card:hover { border-color: rgba(124,106,247,0.25); }
-
-  .slide-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .slide-num {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--accent);
-    background: rgba(124,106,247,0.1);
-    border: 1px solid rgba(124,106,247,0.2);
-    border-radius: 6px;
-    padding: 0.2rem 0.5rem;
-    flex-shrink: 0;
-    min-width: 2.2rem;
-    text-align: center;
-  }
-
-  .slide-title-text {
-    font-size: 0.95rem;
-    font-weight: 600;
-    flex: 1;
-    letter-spacing: -0.01em;
-  }
-
-  .slide-type {
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-  }
-
-  .toggle-icon {
-    color: var(--muted);
-    font-size: 0.8rem;
-    transition: transform 0.2s;
-    flex-shrink: 0;
-  }
-
+  .slide-header { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; cursor: pointer; user-select: none; }
+  .slide-num { font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent); background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.2); border-radius: 6px; padding: 0.2rem 0.5rem; flex-shrink: 0; min-width: 2.2rem; text-align: center; }
+  .slide-title-text { font-size: 0.95rem; font-weight: 600; flex: 1; }
+  .slide-type { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); }
+  .toggle-icon { color: var(--muted); font-size: 0.8rem; transition: transform 0.2s; }
   .slide-card.open .toggle-icon { transform: rotate(180deg); }
-
-  .slide-body {
-    display: none;
-    padding: 0 1.25rem 1.25rem;
-    border-top: 1px solid var(--border);
-  }
-
+  .slide-body { display: none; padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--border); }
   .slide-card.open .slide-body { display: block; }
-
-  .bullet-list {
-    list-style: none;
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .bullet-list li {
-    font-size: 0.85rem;
-    color: #c8c8d8;
-    line-height: 1.55;
-    padding-left: 1.1rem;
-    position: relative;
-    font-family: var(--font-mono);
-  }
-
-  .bullet-list li::before {
-    content: '→';
-    position: absolute;
-    left: 0;
-    color: var(--accent2);
-    font-size: 0.7rem;
-    top: 0.15rem;
-  }
-
-  .bullet-list li.sub {
-    padding-left: 2rem;
-    color: var(--muted);
-    font-size: 0.78rem;
-  }
-
-  .bullet-list li.sub::before {
-    content: '·';
-    color: var(--muted);
-    left: 1.1rem;
-  }
-
-  .copy-btn {
-    margin-top: 1.5rem;
-    width: 100%;
-    padding: 0.75rem;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .copy-btn:hover {
-    border-color: rgba(124,106,247,0.4);
-    color: var(--accent);
-  }
-
-  .error-box {
-    display: none;
-    background: rgba(226,75,74,0.08);
-    border: 1px solid rgba(226,75,74,0.25);
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: #f09595;
-    margin-top: 0.75rem;
-  }
+  .bullet-list { list-style: none; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .bullet-list li { font-size: 0.85rem; color: #c8c8d8; line-height: 1.55; padding-left: 1.1rem; position: relative; font-family: var(--font-mono); }
+  .bullet-list li::before { content: '->'; position: absolute; left: 0; color: var(--accent2); font-size: 0.7rem; top: 0.15rem; }
+  .bullet-list li.sub { padding-left: 2rem; color: var(--muted); font-size: 0.78rem; }
+  .bullet-list li.sub::before { content: '.'; color: var(--muted); left: 1.1rem; }
+  .copy-btn { margin-top: 1.5rem; width: 100%; padding: 0.75rem; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); font-family: var(--font-mono); font-size: 0.72rem; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { border-color: rgba(124,106,247,0.4); color: var(--accent); }
+  .error-box { display: none; background: rgba(226,75,74,0.08); border: 1px solid rgba(226,75,74,0.25); border-radius: 10px; padding: 1rem 1.25rem; font-family: var(--font-mono); font-size: 0.75rem; color: #f09595; margin-top: 0.75rem; }
 </style>
 </head>
 <body>
 <div class="wrap">
-
   <header>
-    <h1>Plánovač prezentací</h1>
-    <p>zadej téma → AI vygeneruje celou strukturu</p>
+    <h1>Planivac prezentaci</h1>
+    <p>zadej tema a AI vygeneruje celou strukturu</p>
   </header>
-
   <div class="form-box">
     <div class="field">
-      <label>Téma prezentace</label>
-      <textarea id="tema" rows="3" placeholder="např. Klimatická změna a její dopady na zemědělství..."></textarea>
+      <label>Tema prezentace</label>
+      <textarea id="tema" rows="3" placeholder="napr. Klimaticka zmena a jeji dopady na zemedelstvi..."></textarea>
     </div>
-
     <div class="row">
       <div class="field">
-        <label>Jazyk výstupu</label>
+        <label>Jazyk vystupu</label>
         <div class="lang-toggle">
-          <button class="lang-btn active" data-lang="cs" onclick="setLang('cs', this)">🇨🇿 Česky</button>
-          <button class="lang-btn" data-lang="en" onclick="setLang('en', this)">🇬🇧 English</button>
+          <button class="lang-btn active" id="btn-cs" onclick="setLang('cs')">CZ Cesky</button>
+          <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN English</button>
         </div>
       </div>
       <div class="field">
-        <label>Kontext (nepovinné)</label>
-        <input type="text" id="kontext" placeholder="např. pro studenty, 10 min...">
+        <label>Kontext (nepovinne)</label>
+        <input type="text" id="kontext" placeholder="napr. pro studenty, 10 min...">
       </div>
     </div>
   </div>
-
-  <button class="generate-btn" id="gen-btn" onclick="generate()">⚡ Vygenerovat strukturu</button>
-
+  <button class="generate-btn" id="gen-btn" onclick="generate()">Vygenerovat strukturu</button>
   <div class="error-box" id="error-box"></div>
-
   <div class="loading" id="loading">
     <div class="spinner"></div>
     <span id="loading-text">Generuji strukturu prezentace...</span>
   </div>
-
   <div id="results">
     <div class="results-header">
-      <span class="results-title">Navržená struktura</span>
-      <span class="slide-count-badge" id="slide-badge">0 slidů</span>
+      <span class="results-title">Navrzena struktura</span>
+      <span class="slide-count-badge" id="slide-badge">0 slidu</span>
     </div>
     <div class="slides-list" id="slides-list"></div>
-    <button class="copy-btn" onclick="copyAll()">📋 Zkopírovat celou osnovu</button>
+    <button class="copy-btn" onclick="copyAll()">Zkopirovat celou osnovu</button>
   </div>
-
 </div>
-
 <script>
-  let selectedLang = 'cs';
-  let lastData = null;
+var selectedLang = 'cs';
+var lastData = null;
 
-  function setLang(lang, btn) {
-    selectedLang = lang;
-    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
+function setLang(lang) {
+  selectedLang = lang;
+  document.getElementById('btn-cs').classList.toggle('active', lang === 'cs');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+}
 
-  async function generate() {
-    const tema = document.getElementById('tema').value.trim();
-    const kontext = document.getElementById('kontext').value.trim();
+function generate() {
+  var tema = document.getElementById('tema').value.trim();
+  var kontext = document.getElementById('kontext').value.trim();
+  if (!tema) { showError('Zadej prosim tema prezentace.'); return; }
+  hideError();
+  setLoading(true);
+  document.getElementById('results').style.display = 'none';
 
-    if (!tema) {
-      showError('Zadej prosím téma prezentace.');
-      return;
-    }
+  var langInstruction = selectedLang === 'cs' ? 'Respond entirely in Czech language.' : 'Respond entirely in English language.';
+  var kontextPart = kontext ? '\nAdditional context: ' + kontext : '';
+  var prompt = 'You are a presentation structure expert. Create a detailed slide-by-slide outline for a presentation on the following topic.\n\nTopic: ' + tema + kontextPart + '\n\n' + langInstruction + '\n\nDecide the optimal number of slides (usually 6-14) based on the topic complexity.\n\nRespond ONLY with a valid JSON array, no markdown, no explanation. Format:\n[\n  {\n    "num": 1,\n    "type": "title",\n    "title": "Slide title",\n    "bullets": [\n      {"text": "Main point", "sub": false},\n      {"text": "Sub point", "sub": true}\n    ]\n  }\n]\n\nTypes: title, intro, content, data, summary, closing\nEach slide should have 3-6 bullets.';
 
-    hideError();
-    setLoading(true);
-    document.getElementById('results').style.display = 'none';
+  var msgs = selectedLang === 'cs' ? ['Analyzuji tema...', 'Navrhuji strukturu...', 'Pripravuji osnovu...'] : ['Analyzing topic...', 'Designing structure...', 'Preparing outline...'];
+  var msgIdx = 0;
+  var msgInterval = setInterval(function() { msgIdx = (msgIdx + 1) % msgs.length; document.getElementById('loading-text').textContent = msgs[msgIdx]; }, 1800);
 
-    const langInstruction = selectedLang === 'cs'
-      ? 'Respond entirely in Czech language.'
-      : 'Respond entirely in English language.';
+  fetch('https://mario23.netlify.app/.netlify/functions/api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    clearInterval(msgInterval);
+    var raw = data.content.map(function(i) { return i.text || ''; }).join('');
+    var clean = raw.replace(/```json|```/g, '').trim();
+    var slides = JSON.parse(clean);
+    lastData = slides;
+    renderSlides(slides);
+  })
+  .catch(function() {
+    clearInterval(msgInterval);
+    showError(selectedLang === 'cs' ? 'Neco se pokazilo. Zkus to znovu.' : 'Something went wrong. Please try again.');
+  })
+  .finally(function() { setLoading(false); });
+}
 
-    const kontextPart = kontext ? `\nAdditional context: ${kontext}` : '';
-
-    const prompt = `You are a presentation structure expert. Create a detailed slide-by-slide outline for a presentation on the following topic.
-
-Topic: ${tema}${kontextPart}
-
-${langInstruction}
-
-Decide the optimal number of slides (usually 6-14) based on the topic complexity.
-
-Respond ONLY with a valid JSON array, no markdown, no explanation. Format:
-[
-  {
-    "num": 1,
-    "type": "title",
-    "title": "Slide title",
-    "bullets": [
-      {"text": "Main point", "sub": false},
-      {"text": "Sub point", "sub": true}
-    ]
-  }
-]
-
-Types: title, intro, content, data, summary, closing
-Each slide should have 3-6 bullets. Sub-points (sub: true) are optional details under a main point.`;
-
-    try {
-      const loadingMsgs = selectedLang === 'cs'
-        ? ['Analyzuji téma...', 'Navrhuji strukturu...', 'Připravuji osnovu...']
-        : ['Analyzing topic...', 'Designing structure...', 'Preparing outline...'];
-      let msgIdx = 0;
-      const msgInterval = setInterval(() => {
-        msgIdx = (msgIdx + 1) % loadingMsgs.length;
-        document.getElementById('loading-text').textContent = loadingMsgs[msgIdx];
-      }, 1800);
-
-      const response = await fetch('
-                                   https://mario23.netlify.app/.netlify/functions/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }]
-        })
-      });
-
-      clearInterval(msgInterval);
-
-      const data = await response.json();
-      const raw = data.content.map(i => i.text || '').join('');
-      const clean = raw.replace(/```json|```/g, '').trim();
-      const slides = JSON.parse(clean);
-
-      lastData = slides;
-      renderSlides(slides);
-
-    } catch (err) {
-      showError(selectedLang === 'cs'
-        ? 'Něco se pokazilo. Zkus to znovu.'
-        : 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function renderSlides(slides) {
-    const list = document.getElementById('slides-list');
-    list.innerHTML = '';
-
-    const typeLabels = {
-      title: 'úvodní', intro: 'úvod', content: 'obsah',
-      data: 'data', summary: 'shrnutí', closing: 'závěr'
-    };
-
-    slides.forEach((slide, i) => {
-      const card = document.createElement('div');
-      card.className = 'slide-card';
-
-      const bulletsHTML = slide.bullets.map(b =>
-        `<li class="${b.sub ? 'sub' : ''}">${b.text}</li>`
-      ).join('');
-
-      card.innerHTML = `
-        <div class="slide-header" onclick="toggleCard(this)">
-          <span class="slide-num">${String(slide.num).padStart(2,'0')}</span>
-          <span class="slide-title-text">${slide.title}</span>
-          <span class="slide-type">${typeLabels[slide.type] || slide.type}</span>
-          <span class="toggle-icon">▾</span>
-        </div>
-        <div class="slide-body">
-          <ul class="bullet-list">${bulletsHTML}</ul>
-        </div>
-      `;
-
-      list.appendChild(card);
-
-      setTimeout(() => card.classList.add('visible'), i * 60);
-    });
-
-    const badge = document.getElementById('slide-badge');
-    const n = slides.length;
-    badge.textContent = n + (selectedLang === 'cs'
-      ? (n === 1 ? ' slide' : n < 5 ? ' slidy' : ' slidů')
-      : (n === 1 ? ' slide' : ' slides'));
-
-    document.getElementById('results').style.display = 'block';
-
-    // auto-open first card
-    setTimeout(() => {
-      const first = list.querySelector('.slide-card');
-      if (first) first.classList.add('open');
-    }, 100);
-  }
-
-  function toggleCard(header) {
-    header.parentElement.classList.toggle('open');
-  }
-
-  function copyAll() {
-    if (!lastData) return;
-    let text = '';
-    lastData.forEach(slide => {
-      text += `\n[${String(slide.num).padStart(2,'0')}] ${slide.title}\n`;
-      slide.bullets.forEach(b => {
-        text += `${b.sub ? '    · ' : '  → '}${b.text}\n`;
-      });
-    });
-    navigator.clipboard.writeText(text.trim()).then(() => {
-      const btn = document.querySelector('.copy-btn');
-      btn.textContent = '✓ Zkopírováno!';
-      setTimeout(() => btn.textContent = '📋 Zkopírovat celou osnovu', 2000);
-    });
-  }
-
-  function setLoading(on) {
-    document.getElementById('loading').style.display = on ? 'flex' : 'none';
-    document.getElementById('gen-btn').disabled = on;
-    if (on) document.getElementById('loading-text').textContent =
-      selectedLang === 'cs' ? 'Generuji strukturu prezentace...' : 'Generating presentation structure...';
-  }
-
-  function showError(msg) {
-    const box = document.getElementById('error-box');
-    box.textContent = msg;
-    box.style.display = 'block';
-  }
-
-  function hideError() {
-    document.getElementById('error-box').style.display = 'none';
-  }
-
-  document.getElementById('tema').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.ctrlKey) generate();
+function renderSlides(slides) {
+  var list = document.getElementById('slides-list');
+  list.innerHTML = '';
+  var typeLabels = { title: 'uvodni', intro: 'uvod', content: 'obsah', data: 'data', summary: 'shrnuti', closing: 'zaver' };
+  slides.forEach(function(slide, i) {
+    var card = document.createElement('div');
+    card.className = 'slide-card';
+    var bulletsHTML = slide.bullets.map(function(b) { return '<li class="' + (b.sub ? 'sub' : '') + '">' + b.text + '</li>'; }).join('');
+    card.innerHTML = '<div class="slide-header" onclick="toggleCard(this)"><span class="slide-num">' + String(slide.num).padStart(2,'0') + '</span><span class="slide-title-text">' + slide.title + '</span><span class="slide-type">' + (typeLabels[slide.type] || slide.type) + '</span><span class="toggle-icon">v</span></div><div class="slide-body"><ul class="bullet-list">' + bulletsHTML + '</ul></div>';
+    list.appendChild(card);
+    setTimeout(function() { card.classList.add('visible'); }, i * 60);
   });
+  var n = slides.length;
+  document.getElementById('slide-badge').textContent = n + (selectedLang === 'cs' ? (n === 1 ? ' slide' : n < 5 ? ' slidy' : ' slidu') : (n === 1 ? ' slide' : ' slides'));
+  document.getElementById('results').style.display = 'block';
+  setTimeout(function() { var first = list.querySelector('.slide-card'); if (first) first.classList.add('open'); }, 100);
+}
+
+function toggleCard(header) { header.parentElement.classList.toggle('open'); }
+
+function copyAll() {
+  if (!lastData) return;
+  var text = '';
+  lastData.forEach(function(slide) {
+    text += '\n[' + String(slide.num).padStart(2,'0') + '] ' + slide.title + '\n';
+    slide.bullets.forEach(function(b) { text += (b.sub ? '    . ' : '  -> ') + b.text + '\n'; });
+  });
+  navigator.clipboard.writeText(text.trim()).then(function() {
+    var btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Zkopirovano!';
+    setTimeout(function() { btn.textContent = 'Zkopirovat celou osnovu'; }, 2000);
+  });
+}
+
+function setLoading(on) {
+  document.getElementById('loading').style.display = on ? 'flex' : 'none';
+  document.getElementById('gen-btn').disabled = on;
+  if (on) document.getElementById('loading-text').textContent = selectedLang === 'cs' ? 'Generuji strukturu prezentace...' : 'Generating presentation structure...';
+}
+
+function showError(msg) { var b = document.getElementById('error-box'); b.textContent = msg; b.style.display = 'block'; }
+function hideError() { document.getElementById('error-box').style.display = 'none'; }
+
+document.getElementById('tema').addEventListener('keydown', function(e) { if (e.key === 'Enter' && e.ctrlKey) generate(); });
 </script>
 </body>
 </html>
