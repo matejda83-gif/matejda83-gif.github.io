@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Čtenářský deník</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #faf8f4;
+    --surface: #ffffff;
+    --border: #e8e4dc;
+    --border2: #d4cfc4;
+    --text: #1c1917;
+    --text2: #78716c;
+    --accent: #b45309;
+    --accent-bg: #fef3c7;
+    --accent-border: #fde68a;
+    --radius: 14px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes shimmer {
+    0%{background-position:200% 0}
+    100%{background-position:-200% 0}
+  }
+
+  .navbar {
+    background: rgba(250,248,244,0.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .navbar-brand { display:flex; align-items:center; gap:10px; font-family:'Lora',serif; font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+  .brand-icon { font-size:1.4rem; }
+  .nav-back { font-size:0.8rem; color:var(--text2); text-decoration:none; font-weight:600; transition:color 0.2s; }
+  .nav-back:hover { color:var(--text); }
+
+  .main { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  .page-header { margin-bottom: 2rem; animation: fadeUp 0.4s ease; }
+  .page-title { font-family:'Lora',serif; font-size:clamp(1.6rem,3vw,2.2rem); font-weight:700; letter-spacing:-0.03em; margin-bottom:0.35rem; }
+  .page-sub { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+  .form-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    animation: fadeUp 0.4s 0.05s ease both;
+  }
+  .form-card-title { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text2); margin-bottom:1.1rem; }
+
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:0.85rem; }
+  .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.85rem; margin-bottom:0.85rem; }
+  .form-group { display:flex; flex-direction:column; gap:0.4rem; }
+  .form-label { font-size:0.72rem; font-weight:600; color:var(--text2); letter-spacing:0.03em; }
+
+  .form-input, .form-select, .form-textarea {
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem; color: var(--text);
+    background: var(--bg); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(180,83,9,0.08); background: #fff;
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color:#c4bcb0; }
+  .form-textarea { resize:vertical; min-height:90px; line-height:1.55; }
+  .form-select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; background-color:var(--bg); padding-right:2rem; }
+
+  .output-toggle {
+    display: flex; gap: 0.5rem; margin-bottom: 0.85rem;
+  }
+  .toggle-btn {
+    flex:1; padding:0.6rem;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    font-family:'DM Sans',sans-serif;
+    font-size:0.8rem; font-weight:600;
+    color:var(--text2); background:var(--bg);
+    cursor:pointer; transition:all 0.15s; text-align:center;
+  }
+  .toggle-btn.active { border-color:var(--accent); background:var(--accent-bg); color:var(--accent); }
+
+  .btn-generate {
+    width:100%; padding:0.85rem;
+    background: var(--accent);
+    border:none; border-radius:12px;
+    color:#fff; font-family:'DM Sans',sans-serif;
+    font-size:0.95rem; font-weight:700;
+    cursor:pointer;
+    transition:opacity 0.2s, transform 0.15s;
+    box-shadow:0 4px 14px rgba(180,83,9,0.3);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-generate:hover:not(:disabled) { opacity:0.88; transform:translateY(-1px); }
+  .btn-generate:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+
+  .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+
+  .error-box {
+    display:none; background:#fef2f2; border:1.5px solid #fecaca;
+    border-radius:10px; padding:0.9rem 1rem;
+    font-size:0.8rem; color:#ef4444; margin-top:0.75rem;
+  }
+
+  /* RESULT */
+  #result { display:none; margin-top:0.5rem; animation:fadeIn 0.4s ease; }
+
+  .result-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem;
+  }
+  .result-title { font-family:'Lora',serif; font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+  .result-meta { font-size:0.75rem; color:var(--text2); margin-top:2px; }
+
+  .btn-copy, .btn-print {
+    display:flex; align-items:center; gap:6px;
+    padding:0.5rem 0.9rem;
+    border:1.5px solid var(--border);
+    border-radius:10px; background:var(--surface);
+    font-family:'DM Sans',sans-serif;
+    font-size:0.78rem; font-weight:600;
+    color:var(--text2); cursor:pointer;
+    transition:all 0.2s;
+  }
+  .btn-copy:hover, .btn-print:hover { border-color:var(--border2); color:var(--text); }
+  .btn-copy.copied { border-color:#22c55e; color:#22c55e; }
+  .result-actions { display:flex; gap:0.5rem; }
+
+  /* TEXT OUTPUT */
+  .text-output {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 2.25rem;
+    font-family: 'Lora', serif;
+    font-size: 0.95rem; line-height: 1.85;
+    color: var(--text);
+    white-space: pre-wrap;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+  }
+  .text-output p { margin-bottom: 1rem; }
+
+  /* OUTLINE OUTPUT */
+  .outline-output {
+    display:flex; flex-direction:column; gap:0.75rem;
+  }
+  .outline-section {
+    background:var(--surface);
+    border:1.5px solid var(--border);
+    border-radius:12px; overflow:hidden;
+  }
+  .outline-section-header {
+    display:flex; align-items:center; gap:10px;
+    padding:0.9rem 1.1rem;
+    border-bottom:1px solid var(--border);
+    background:var(--bg);
+  }
+  .outline-section-icon { font-size:1rem; }
+  .outline-section-title { font-size:0.88rem; font-weight:700; letter-spacing:-0.01em; }
+  .outline-section-body { padding:0.9rem 1.1rem; }
+  .outline-point { display:flex; gap:8px; font-size:0.83rem; color:var(--text2); line-height:1.55; margin-bottom:0.4rem; }
+  .outline-point:last-child { margin-bottom:0; }
+  .outline-dot { color:var(--accent); flex-shrink:0; margin-top:1px; }
+
+  /* LOADING SKELETON */
+  .skeleton {
+    background: linear-gradient(90deg, #f0ece4 25%, #e8e4dc 50%, #f0ece4 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px; height: 14px; margin-bottom: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    .navbar, .form-card, .result-actions, .filters, #result .result-header { display:none !important; }
+    body { background:#fff; }
+    .text-output { border:none; box-shadow:none; padding:0; font-size:11pt; line-height:1.7; }
+    .main { padding:0; max-width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <span class="brand-icon">📖</span>
+    Čtenářský deník
+  </div>
+  <a href="index.html" class="nav-back">← Dashboard</a>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-title">Čtenářský deník</div>
+    <div class="page-sub">Zadej knihu a AI napíše deník přesně podle školních požadavků.</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-card-title">Informace o knize</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Název knihy *</label>
+        <input class="form-input" id="book-title" placeholder="např. Malý princ">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Autor *</label>
+        <input class="form-input" id="book-author" placeholder="např. Antoine de Saint-Exupéry">
+      </div>
+    </div>
+
+    <div class="form-row-3">
+      <div class="form-group">
+        <label class="form-label">Jazyk výstupu</label>
+        <select class="form-select" id="lang">
+          <option value="cs">🇨🇿 Čeština</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="sk">🇸🇰 Slovenčina</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Délka</label>
+        <select class="form-select" id="length">
+          <option value="1">1 A4 (~400 slov)</option>
+          <option value="2" selected>2 A4 (~800 slov)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Výstup</label>
+        <select class="form-select" id="output-type">
+          <option value="text">Celý text</option>
+          <option value="outline">Jen osnova</option>
+          <option value="both">Obojí</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:0.85rem">
+      <label class="form-label">Dodatečné informace (nepovinné)</label>
+      <textarea class="form-textarea" id="details" placeholder="Např: Četl jsem knihu ve škole, nejvíce mě zaujala postava lišky, příběh je smutný ale poučný, nelíbila se mi pomalá část uprostřed..."></textarea>
+    </div>
+
+    <button class="btn-generate" id="gen-btn" onclick="generate()">
+      📝 Vygenerovat deník
+    </button>
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <div id="result">
+    <div class="result-header">
+      <div>
+        <div class="result-title" id="result-title"></div>
+        <div class="result-meta" id="result-meta"></div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-copy" id="copy-btn" onclick="copyText()">📋 Kopírovat</button>
+        <button class="btn-print" onclick="window.print()">🖨️ Tisk</button>
+      </div>
+    </div>
+    <div id="result-content"></div>
+  </div>
+
+</main>
+
+<script>
+var generatedText = '';
+
+function generate() {
+  var title = document.getElementById('book-title').value.trim();
+  var author = document.getElementById('book-author').value.trim();
+  var details = document.getElementById('details').value.trim();
+  var lang = document.getElementById('lang').value;
+  var length = document.getElementById('length').value;
+  var outputType = document.getElementById('output-type').value;
+
+  if (!title || !author) {
+    showError('Zadej prosím název knihy a autora.');
+    return;
+  }
+
+  hideError();
+  setLoading(true);
+  document.getElementById('result').style.display = 'none';
+
+  var langMap = { cs: 'Czech', en: 'English', sk: 'Slovak' };
+  var langName = langMap[lang] || 'Czech';
+  var wordCount = length === '1' ? '350-450' : '700-900';
+
+  var detailsPart = details ? '\n\nAdditional notes from the reader: ' + details : '';
+
+  var systemPrompt = 'You are a high school literature teacher helping students write reading journals (čtenářský deník). You write in a sophisticated, personal, yet academically appropriate style. You avoid clichés and generic AI phrases. Write as if a thoughtful student who actually read the book is writing — with genuine opinions, specific observations, and personality. The text should feel human and slightly imperfect in a natural way.';
+
+  var userPrompt;
+
+  if (outputType === 'outline') {
+    userPrompt = 'Create a detailed outline for a reading journal about the book "' + title + '" by ' + author + '.' + detailsPart + '\n\nLanguage: ' + langName + '\n\nRespond ONLY with a JSON array of sections. No markdown, no extra text:\n[\n  {\n    "icon": "emoji",\n    "title": "Section title",\n    "points": ["point 1", "point 2", "point 3"]\n  }\n]\n\nInclude these sections: Opening/Introduction, Artistic aspects, Story quality (plot, characters), Ideas and themes, Atmosphere and emotional experience, Quoted passage with commentary, Conclusion.';
+  } else if (outputType === 'text') {
+    userPrompt = 'Write a reading journal (čtenářský deník) for the book "' + title + '" by ' + author + '.' + detailsPart + '\n\nRequirements:\n- Language: ' + langName + '\n- Length: approximately ' + wordCount + ' words\n- Clear logical structure with beginning and end\n- Evaluation of the artistic aspects of the work\n- Evaluation of story quality: theme, plot, character development, consistency\n- Evaluation of ideas and messages in the work\n- Evaluation of atmosphere and emotional experience (can be negative or neutral)\n- Include 1-2 quoted passages from the book with commentary\n- Personal, authentic voice — NOT generic AI style\n- Avoid phrases like "tato kniha mě velmi oslovila" or "autor mistrovsky"\n\nWrite the full text directly, no headers or formatting markers.';
+  } else {
+    userPrompt = 'Write a reading journal (čtenářský deník) for the book "' + title + '" by ' + author + '.' + detailsPart + '\n\nRequirements:\n- Language: ' + langName + '\n- Length: approximately ' + wordCount + ' words\n- Clear logical structure with beginning and end\n- Evaluation of the artistic aspects of the work\n- Evaluation of story quality: theme, plot, character development, consistency\n- Evaluation of ideas and messages in the work\n- Evaluation of atmosphere and emotional experience (can be negative or neutral)\n- Include 1-2 quoted passages from the book with commentary\n- Personal, authentic voice — NOT generic AI style\n- Avoid phrases like "tato kniha mě velmi oslovila" or "autor mistrovsky"\n\nAfter the full text, add a separator "---OUTLINE---" and then a JSON array of outline sections:\n[\n  {\n    "icon": "emoji",\n    "title": "Section title",\n    "points": ["point 1", "point 2"]\n  }\n]';
+  }
+
+  fetch('https://mario23.netlify.app/.netlify/functions/api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var raw = data.content.map(function(i){ return i.text || ''; }).join('');
+    processResult(raw, title, author, outputType);
+  })
+  .catch(function() {
+    showError('Něco se pokazilo. Zkontroluj připojení a zkus znovu.');
+  })
+  .finally(function() { setLoading(false); });
+}
+
+function processResult(raw, title, author, outputType) {
+  var contentEl = document.getElementById('result-content');
+  document.getElementById('result-title').textContent = title + ' — ' + author;
+
+  var langLabels = { cs: 'Čeština', en: 'English', sk: 'Slovenčina' };
+  var lengthLabels = { '1': '1 A4', '2': '2 A4' };
+  document.getElementById('result-meta').textContent =
+    langLabels[document.getElementById('lang').value] + ' · ' +
+    lengthLabels[document.getElementById('length').value];
+
+  contentEl.innerHTML = '';
+
+  if (outputType === 'outline') {
+    try {
+      var clean = raw.replace(/```json|```/g,'').trim();
+      var sections = JSON.parse(clean);
+      generatedText = sections.map(function(s){ return s.title + '\n' + s.points.map(function(p){ return '• ' + p; }).join('\n'); }).join('\n\n');
+      contentEl.appendChild(renderOutline(sections));
+    } catch(e) {
+      renderTextOutput(raw, contentEl);
+    }
+  } else if (outputType === 'text') {
+    generatedText = raw;
+    renderTextOutput(raw, contentEl);
+  } else {
+    var parts = raw.split('---OUTLINE---');
+    var textPart = parts[0].trim();
+    generatedText = textPart;
+
+    var wrapper = document.createElement('div');
+
+    var textDiv = document.createElement('div');
+    renderTextOutput(textPart, textDiv);
+    wrapper.appendChild(textDiv);
+
+    if (parts[1]) {
+      var divider = document.createElement('div');
+      divider.style.cssText = 'margin:2rem 0 1rem; display:flex; align-items:center; gap:12px;';
+      divider.innerHTML = '<div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;color:var(--text2);text-transform:uppercase;white-space:nowrap">Osnova</span><div style="flex:1;height:1px;background:var(--border)"></div>';
+      wrapper.appendChild(divider);
+
+      try {
+        var cleanOutline = parts[1].replace(/```json|```/g,'').trim();
+        var sections = JSON.parse(cleanOutline);
+        wrapper.appendChild(renderOutline(sections));
+      } catch(e) {}
+    }
+
+    contentEl.appendChild(wrapper);
+  }
+
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderTextOutput(text, container) {
+  var div = document.createElement('div');
+  div.className = 'text-output';
+  var paragraphs = text.split(/\n\n+/).filter(function(p){ return p.trim(); });
+  paragraphs.forEach(function(p) {
+    var pEl = document.createElement('p');
+    pEl.textContent = p.trim();
+    div.appendChild(pEl);
+  });
+  container.appendChild(div);
+}
+
+function renderOutline(sections) {
+  var wrap = document.createElement('div');
+  wrap.className = 'outline-output';
+  sections.forEach(function(s) {
+    var sec = document.createElement('div');
+    sec.className = 'outline-section';
+    var header = document.createElement('div');
+    header.className = 'outline-section-header';
+    header.innerHTML = '<span class="outline-section-icon">' + (s.icon || '📌') + '</span><span class="outline-section-title">' + escHtml(s.title) + '</span>';
+    var body = document.createElement('div');
+    body.className = 'outline-section-body';
+    (s.points || []).forEach(function(p) {
+      var pt = document.createElement('div');
+      pt.className = 'outline-point';
+      pt.innerHTML = '<span class="outline-dot">→</span><span>' + escHtml(p) + '</span>';
+      body.appendChild(pt);
+    });
+    sec.appendChild(header);
+    sec.appendChild(body);
+    wrap.appendChild(sec);
+  });
+  return wrap;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copyText() {
+  if (!generatedText) return;
+  navigator.clipboard.writeText(generatedText).then(function() {
+    var btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Zkopírováno!';
+    btn.classList.add('copied');
+    setTimeout(function(){ btn.textContent = '📋 Kopírovat'; btn.classList.remove('copied'); }, 2500);
+  });
+}
+
+function setLoading(on) {
+  var btn = document.getElementById('gen-btn');
+  btn.disabled = on;
+  btn.innerHTML = on
+    ? '<div class="spinner"></div> Píšu deník...'
+    : '📝 Vygenerovat deník';
+}
+
+function showError(msg) {
+  var b = document.getElementById('error-box');
+  b.textContent = msg; b.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+document.getElementById('book-title').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('book-author').focus(); });
+document.getElementById('book-author').addEventListener('keydown', function(e){ if(e.key==='Enter') generate(); });
+</script>
+</body>
+</html>
