@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moje appky</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --border: #ebebeb;
+    --border2: #e0e0e0;
+    --accent: #1a1a1a;
+    --muted: #999;
+    --muted2: #bbb;
+    --text: #1a1a1a;
+    --text2: #555;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* NAVBAR */
+  .navbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(247,247,245,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2.5rem;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    animation: fadeIn 0.4s ease;
+  }
+  .navbar-left { display: flex; align-items: center; gap: 14px; }
+  .navbar-avatar {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .navbar-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem; font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  .navbar-right {
+    font-size: 0.78rem; color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* MAIN */
+  .main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3rem 2rem 4rem;
+  }
+
+  /* HEADER */
+  .header {
+    margin-bottom: 2.5rem;
+    animation: fadeUp 0.5s ease both;
+  }
+  .header-top {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .header-greeting {
+    font-size: 0.75rem; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 0.3rem;
+  }
+  .header-h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 700; letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .header-count {
+    font-size: 0.75rem; color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+
+  /* SEARCH */
+  .search-wrap {
+    position: relative;
+  }
+  .search-icon {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted2);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%; padding: 0.75rem 1rem 0.75rem 2.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-input:focus {
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(26,26,26,0.06);
+  }
+  .search-input::placeholder { color: var(--muted2); }
+
+  /* CATEGORIES */
+  .categories {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+    margin-bottom: 1.75rem;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+  .cat-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cat-btn:hover { border-color: var(--border2); color: var(--text); }
+  .cat-btn.active {
+    background: var(--text);
+    border-color: var(--text);
+    color: #fff;
+  }
+
+  /* APP LIST */
+  .app-list {
+    display: flex; flex-direction: column; gap: 0.6rem;
+  }
+
+  .app-item {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem;
+    text-decoration: none; color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    animation: fadeUp 0.4s ease both;
+  }
+  .app-item:hover {
+    border-color: var(--border2);
+    box-shadow: var(--shadow-hover);
+    transform: translateX(3px);
+  }
+
+  .app-icon-wrap {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; flex-shrink: 0;
+    transition: border-color 0.2s;
+  }
+  .app-item:hover .app-icon-wrap { border-color: var(--border2); }
+
+  .app-info { flex: 1; min-width: 0; }
+  .app-name {
+    font-size: 0.95rem; font-weight: 600;
+    letter-spacing: -0.01em; margin-bottom: 0.2rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .app-desc {
+    font-size: 0.78rem; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .app-right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+  .app-tag {
+    font-size: 0.65rem; font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--bg);
+  }
+  .app-arrow {
+    color: var(--muted2);
+    font-size: 1rem;
+    transition: color 0.2s, transform 0.2s;
+  }
+  .app-item:hover .app-arrow {
+    color: var(--text);
+    transform: translate(2px, -2px);
+  }
+
+  /* EMPTY / NO RESULTS */
+  .empty {
+    text-align: center; padding: 4rem 2rem;
+    animation: fadeIn 0.3s ease;
+  }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3; }
+  .empty-text { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+  /* NO APPS STATE */
+  .no-apps {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2rem;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+  }
+  .no-apps-text { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+  /* FOOTER */
+  .footer {
+    max-width: 860px; margin: 0 auto;
+    padding: 1.5rem 2rem 2rem;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.72rem; color: var(--muted2);
+    animation: fadeIn 0.6s ease;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 0.65rem; font-weight: 600;
+    letter-spacing: 0.1em; color: var(--muted2);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    padding-left: 0.25rem;
+  }
+
+  /* tag color variants */
+  .tag-ai { color: #7c6af7; border-color: rgba(124,106,247,0.2); background: rgba(124,106,247,0.05); }
+  .tag-nastroj { color: #0ea5e9; border-color: rgba(14,165,233,0.2); background: rgba(14,165,233,0.05); }
+  .tag-finance { color: #16a34a; border-color: rgba(22,163,74,0.2); background: rgba(22,163,74,0.05); }
+  .tag-hra { color: #f59e0b; border-color: rgba(245,158,11,0.2); background: rgba(245,158,11,0.05); }
+  .tag-produktivita { color: #e8332a; border-color: rgba(232,51,42,0.2); background: rgba(232,51,42,0.05); }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-left">
+    <div class="navbar-avatar">M</div>
+    <div class="navbar-title">Moje appky</div>
+  </div>
+  <div class="navbar-right" id="nav-date"></div>
+</nav>
+
+<main class="main">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-greeting">Vítej zpět</div>
+        <h1 class="header-h1">Dashboard</h1>
+      </div>
+      <span class="header-count" id="app-count">0 aplikací</span>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+      </span>
+      <input class="search-input" id="search" type="text" placeholder="Hledat aplikaci..." oninput="filterApps()">
+    </div>
+  </div>
+
+  <div class="categories" id="categories"></div>
+
+  <div class="section-label" id="section-label">Všechny aplikace</div>
+  <div class="app-list" id="app-list"></div>
+</main>
+
+<footer class="footer">
+  <span>matejda83-gif.github.io</span>
+  <span id="footer-date"></span>
+</footer>
+
+<script>
+// =============================================
+// APPKY — přidej novou appku sem:
+// {
+//   name: "Název",
+//   desc: "Krátký popis",
+//   icon: "🔧",
+//   href: "soubor.html",
+//   tag: "ai nástroj",        ← kategorie
+//   tagClass: "tag-ai"        ← barva: tag-ai, tag-nastroj, tag-finance, tag-hra, tag-produktivita
+// }
+// =============================================
+const APPS = [
+  {
+    name: "Plánovač prezentací",
+    desc: "Zadej téma a AI vygeneruje strukturu všech slidů.",
+    icon: "📊",
+    href: "prezentace.html",
+    tag: "AI nástroj",
+    tagClass: "tag-ai"
+  },
+  {
+    name: "Červený míček",
+    desc: "Generátor koster prezentací s výstupem pro sdílení.",
+    icon: "🎯",
+    href: "cerveny-micek.html",
+    tag: "AI nástroj",
+    tagClass: "tag-ai"
+  },
+];
+// =============================================
+
+let activeCategory = 'vše';
+
+function getAllCategories() {
+  const cats = ['vše', ...new Set(APPS.map(a => a.tag.toLowerCase()))];
+  return cats;
+}
+
+function renderCategories() {
+  const wrap = document.getElementById('categories');
+  wrap.innerHTML = '';
+  getAllCategories().forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (cat === activeCategory ? ' active' : '');
+    btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    btn.onclick = () => { activeCategory = cat; renderCategories(); filterApps(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function filterApps() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const list = document.getElementById('app-list');
+  const label = document.getElementById('section-label');
+
+  const filtered = APPS.filter(app => {
+    const matchSearch = app.name.toLowerCase().includes(q) || app.desc.toLowerCase().includes(q);
+    const matchCat = activeCategory === 'vše' || app.tag.toLowerCase() === activeCategory;
+    return matchSearch && matchCat;
+  });
+
+  label.textContent = activeCategory === 'vše' ? 'Všechny aplikace' : activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1);
+  list.innerHTML = '';
+
+  if (APPS.length === 0) {
+    list.innerHTML = '<div class="no-apps"><div style="font-size:2rem;margin-bottom:0.75rem;opacity:0.25">⚡</div><div class="no-apps-text">Zatím žádné aplikace.<br>Až spolu něco vytvoříme, přidáme ji sem.</div></div>';
+    return;
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Žádná aplikace neodpovídá hledání.</div></div>';
+    return;
+  }
+
+  filtered.forEach((app, i) => {
+    const a = document.createElement('a');
+    a.className = 'app-item';
+    a.href = app.href;
+    a.style.animationDelay = (i * 50) + 'ms';
+    a.innerHTML =
+      '<div class="app-icon-wrap">' + app.icon + '</div>' +
+      '<div class="app-info">' +
+        '<div class="app-name">' + app.name + '</div>' +
+        '<div class="app-desc">' + app.desc + '</div>' +
+      '</div>' +
+      '<div class="app-right">' +
+        '<span class="app-tag ' + app.tagClass + '">' + app.tag + '</span>' +
+        '<span class="app-arrow">↗</span>' +
+      '</div>';
+    list.appendChild(a);
+  });
+
+  const n = APPS.length;
+  document.getElementById('app-count').textContent = n + (n === 1 ? ' aplikace' : n < 5 ? ' aplikace' : ' aplikací');
+}
+
+function initDate() {
+  const now = new Date();
+  const opts = { weekday: 'long', day: 'numeric', month: 'long' };
+  const str = now.toLocaleDateString('cs-CZ', opts);
+  document.getElementById('nav-date').textContent = str;
+  document.getElementById('footer-date').textContent = now.toLocaleDateString('cs-CZ', { year: 'numeric', month: 'long' });
+}
+
+renderCategories();
+filterApps();
+initDate();
+</script>
+</body>
+</html>
