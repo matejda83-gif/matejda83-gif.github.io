@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Todo list</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f0f4ff;
+    --surface: #ffffff;
+    --border: #e8eaf0;
+    --text: #1e1e2e;
+    --text2: #6b7280;
+    --radius: 16px;
+    --p1: #ef4444; --p1bg: #fef2f2; --p1border: #fecaca;
+    --p2: #f59e0b; --p2bg: #fffbeb; --p2border: #fde68a;
+    --p3: #22c55e; --p3bg: #f0fdf4; --p3border: #bbf7d0;
+    --cat1: #8b5cf6; --cat1bg: #f5f3ff;
+    --cat2: #0ea5e9; --cat2bg: #f0f9ff;
+    --cat3: #f59e0b; --cat3bg: #fffbeb;
+    --cat4: #ec4899; --cat4bg: #fdf2f8;
+    --cat5: #10b981; --cat5bg: #ecfdf5;
+  }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  @keyframes strikethrough { from{width:0} to{width:100%} }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* NAV */
+  .navbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+  }
+  .navbar-brand { display:flex; align-items:center; gap:10px; font-size:1.1rem; font-weight:800; letter-spacing:-0.02em; }
+  .brand-emoji { font-size:1.4rem; }
+  .nav-back { font-size:0.8rem; color:var(--text2); text-decoration:none; display:flex; align-items:center; gap:5px; font-weight:600; transition:color 0.2s; }
+  .nav-back:hover { color:var(--text); }
+
+  /* MAIN */
+  .main { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* STATS */
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem; margin-bottom: 1.75rem;
+    animation: fadeUp 0.4s ease;
+  }
+  .stat-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+    border: 1.5px solid var(--border);
+  }
+  .stat-num { font-size: 1.8rem; font-weight: 800; line-height: 1; margin-bottom: 0.25rem; }
+  .stat-label { font-size: 0.72rem; color: var(--text2); font-weight: 600; letter-spacing: 0.04em; }
+  .stat-card.done .stat-num { color: #22c55e; }
+  .stat-card.pending .stat-num { color: #f59e0b; }
+  .stat-card.total .stat-num { color: #8b5cf6; }
+
+  /* ADD FORM */
+  .add-form {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.4s 0.05s ease both;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+  .add-form-title { font-size:0.72rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text2); margin-bottom:0.9rem; }
+  .add-input {
+    width:100%; padding:0.7rem 1rem;
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    font-family:'Nunito',sans-serif;
+    font-size:0.95rem; color:var(--text);
+    outline:none; margin-bottom:0.75rem;
+    transition:border-color 0.2s, box-shadow 0.2s;
+    background: #fafbff;
+  }
+  .add-input:focus { border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,0.1); background:#fff; }
+  .add-input::placeholder { color:#c4c9d8; }
+  .add-row { display:flex; gap:0.6rem; flex-wrap:wrap; }
+  .add-select {
+    flex:1; min-width:120px;
+    padding:0.6rem 0.8rem;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    font-family:'Nunito',sans-serif;
+    font-size:0.82rem; color:var(--text);
+    background:#fafbff; outline:none; cursor:pointer;
+    transition:border-color 0.2s;
+  }
+  .add-select:focus { border-color:#8b5cf6; }
+  .add-date {
+    flex:1; min-width:130px;
+    padding:0.6rem 0.8rem;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    font-family:'Nunito',sans-serif;
+    font-size:0.82rem; color:var(--text);
+    background:#fafbff; outline:none;
+    transition:border-color 0.2s;
+  }
+  .add-date:focus { border-color:#8b5cf6; }
+  .btn-add {
+    padding:0.6rem 1.2rem;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    border:none; border-radius:10px;
+    color:#fff; font-family:'Nunito',sans-serif;
+    font-size:0.85rem; font-weight:700;
+    cursor:pointer; white-space:nowrap;
+    transition:opacity 0.2s, transform 0.15s;
+    box-shadow:0 3px 10px rgba(109,40,217,0.3);
+  }
+  .btn-add:hover { opacity:0.88; transform:translateY(-1px); }
+
+  /* FILTERS */
+  .filters {
+    display:flex; gap:0.5rem; flex-wrap:wrap;
+    margin-bottom:1.25rem;
+    animation: fadeUp 0.4s 0.1s ease both;
+  }
+  .filter-btn {
+    padding:0.35rem 0.85rem;
+    border-radius:20px;
+    border:1.5px solid var(--border);
+    background:var(--surface);
+    font-family:'Nunito',sans-serif;
+    font-size:0.75rem; font-weight:700;
+    color:var(--text2); cursor:pointer;
+    transition:all 0.15s;
+  }
+  .filter-btn:hover { border-color:#8b5cf6; color:#8b5cf6; }
+  .filter-btn.active { background:#8b5cf6; border-color:#8b5cf6; color:#fff; }
+
+  /* SECTION */
+  .section-label {
+    font-size:0.65rem; font-weight:700; letter-spacing:0.1em;
+    color:var(--text2); text-transform:uppercase;
+    margin-bottom:0.6rem; padding-left:0.25rem;
+  }
+
+  /* TASK */
+  .task-list { display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.5rem; }
+
+  .task-item {
+    background:var(--surface);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    padding:0.9rem 1rem;
+    display:flex; align-items:center; gap:0.85rem;
+    transition:all 0.2s;
+    animation:slideDown 0.25s ease;
+  }
+  .task-item:hover { border-color:#d1d5e8; box-shadow:0 3px 12px rgba(0,0,0,0.06); }
+  .task-item.done { opacity:0.55; background:#fafafa; }
+
+  .task-check {
+    width:22px; height:22px; border-radius:7px;
+    border:2px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; flex-shrink:0;
+    transition:all 0.2s; font-size:0.7rem;
+    background:#fafbff;
+  }
+  .task-check:hover { border-color:#8b5cf6; background:#f5f3ff; }
+  .task-item.done .task-check { background:#22c55e; border-color:#22c55e; color:#fff; animation:pop 0.3s ease; }
+
+  .task-body { flex:1; min-width:0; }
+  .task-name {
+    font-size:0.9rem; font-weight:600;
+    position:relative; display:inline-block;
+    transition:color 0.2s;
+  }
+  .task-item.done .task-name { color:var(--text2); text-decoration:line-through; }
+  .task-meta { display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem; flex-wrap:wrap; }
+
+  .task-priority {
+    font-size:0.62rem; font-weight:700; letter-spacing:0.05em;
+    padding:0.15rem 0.55rem; border-radius:20px;
+  }
+  .p-high { color:var(--p1); background:var(--p1bg); border:1px solid var(--p1border); }
+  .p-medium { color:var(--p2); background:var(--p2bg); border:1px solid var(--p2border); }
+  .p-low { color:var(--p3); background:var(--p3bg); border:1px solid var(--p3border); }
+
+  .task-cat {
+    font-size:0.62rem; font-weight:700; letter-spacing:0.04em;
+    padding:0.15rem 0.55rem; border-radius:20px;
+  }
+  .c-prace { color:var(--cat1); background:var(--cat1bg); }
+  .c-osobni { color:var(--cat2); background:var(--cat2bg); }
+  .c-nakupy { color:var(--cat3); background:var(--cat3bg); }
+  .c-zdravi { color:var(--cat4); background:var(--cat4bg); }
+  .c-jine { color:var(--cat5); background:var(--cat5bg); }
+
+  .task-date {
+    font-size:0.68rem; color:var(--text2); font-weight:600;
+    display:flex; align-items:center; gap:3px;
+  }
+  .task-date.overdue { color:#ef4444; }
+
+  .btn-delete {
+    width:28px; height:28px; border-radius:8px;
+    border:1.5px solid var(--border);
+    background:transparent; color:var(--text2);
+    font-size:0.85rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 0.15s; flex-shrink:0; opacity:0;
+  }
+  .task-item:hover .btn-delete { opacity:1; }
+  .btn-delete:hover { background:#fef2f2; border-color:#fecaca; color:#ef4444; }
+
+  /* ARCHIVE */
+  .archive-toggle {
+    display:flex; align-items:center; gap:8px;
+    font-size:0.78rem; font-weight:700; color:var(--text2);
+    cursor:pointer; padding:0.6rem 0;
+    border-top:1px solid var(--border);
+    margin-top:0.5rem;
+    user-select:none;
+    transition:color 0.2s;
+  }
+  .archive-toggle:hover { color:var(--text); }
+  .archive-arrow { transition:transform 0.2s; }
+  .archive-arrow.open { transform:rotate(90deg); }
+
+  .empty-state {
+    text-align:center; padding:3rem 1rem;
+    animation:fadeIn 0.3s ease;
+  }
+  .empty-emoji { font-size:2.5rem; margin-bottom:0.75rem; opacity:0.4; }
+  .empty-text { font-size:0.85rem; color:var(--text2); line-height:1.6; }
+
+  /* progress bar */
+  .progress-wrap { margin-bottom:1.75rem; animation:fadeUp 0.4s 0.08s ease both; }
+  .progress-label { display:flex; justify-content:space-between; font-size:0.72rem; font-weight:700; color:var(--text2); margin-bottom:0.4rem; }
+  .progress-bar { height:8px; background:#e8eaf0; border-radius:20px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#8b5cf6,#22c55e); border-radius:20px; transition:width 0.5s ease; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <span class="brand-emoji">✅</span>
+    Todo list
+  </div>
+  <a href="index.html" class="nav-back">← Dashboard</a>
+</nav>
+
+<main class="main">
+
+  <div class="stats">
+    <div class="stat-card total"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Celkem</div></div>
+    <div class="stat-card pending"><div class="stat-num" id="stat-pending">0</div><div class="stat-label">Zbývá</div></div>
+    <div class="stat-card done"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Hotovo</div></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Pokrok</span><span id="progress-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="add-form">
+    <div class="add-form-title">Nový úkol</div>
+    <input class="add-input" id="new-task" placeholder="Co je potřeba udělat?" onkeydown="if(event.key==='Enter')addTask()">
+    <div class="add-row">
+      <select class="add-select" id="new-priority">
+        <option value="high">🔴 Vysoká priorita</option>
+        <option value="medium" selected>🟡 Střední priorita</option>
+        <option value="low">🟢 Nízká priorita</option>
+      </select>
+      <select class="add-select" id="new-cat">
+        <option value="prace">💼 Práce</option>
+        <option value="osobni">👤 Osobní</option>
+        <option value="nakupy">🛒 Nákupy</option>
+        <option value="zdravi">💪 Zdraví</option>
+        <option value="jine">✨ Jiné</option>
+      </select>
+      <input class="add-date" type="date" id="new-date">
+      <button class="btn-add" onclick="addTask()">+ Přidat</button>
+    </div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="section-label" id="active-label">Aktivní úkoly</div>
+  <div class="task-list" id="task-list"></div>
+
+  <div class="archive-toggle" id="archive-toggle" onclick="toggleArchive()">
+    <span class="archive-arrow" id="archive-arrow">▶</span>
+    <span id="archive-label">Archiv (0)</span>
+  </div>
+  <div id="archive-list" style="display:none; margin-top:0.5rem;"></div>
+
+</main>
+
+<script>
+var tasks = [];
+var filterCat = 'vse';
+var filterPri = 'vse';
+var showArchive = false;
+
+var PRIORITY_LABELS = { high: '🔴 Vysoká', medium: '🟡 Střední', low: '🟢 Nízká' };
+var PRIORITY_CLASS = { high: 'p-high', medium: 'p-medium', low: 'p-low' };
+var CAT_LABELS = { prace: '💼 Práce', osobni: '👤 Osobní', nakupy: '🛒 Nákupy', zdravi: '💪 Zdraví', jine: '✨ Jiné' };
+var CAT_CLASS = { prace: 'c-prace', osobni: 'c-osobni', nakupy: 'c-nakupy', zdravi: 'c-zdravi', jine: 'c-jine' };
+
+function load() {
+  try { tasks = JSON.parse(localStorage.getItem('todo-tasks') || '[]'); } catch(e) { tasks = []; }
+}
+
+function save() {
+  localStorage.setItem('todo-tasks', JSON.stringify(tasks));
+}
+
+function addTask() {
+  var name = document.getElementById('new-task').value.trim();
+  if (!name) return;
+  tasks.unshift({
+    id: Date.now(),
+    name: name,
+    priority: document.getElementById('new-priority').value,
+    cat: document.getElementById('new-cat').value,
+    date: document.getElementById('new-date').value,
+    done: false,
+    archived: false,
+    created: new Date().toISOString()
+  });
+  document.getElementById('new-task').value = '';
+  document.getElementById('new-date').value = '';
+  save(); render();
+}
+
+function toggleDone(id) {
+  var t = tasks.find(function(t){ return t.id === id; });
+  if (t) { t.done = !t.done; if(t.done) t.archived = false; }
+  save(); render();
+}
+
+function archiveTask(id) {
+  var t = tasks.find(function(t){ return t.id === id; });
+  if (t) { t.archived = true; t.done = true; }
+  save(); render();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(function(t){ return t.id !== id; });
+  save(); render();
+}
+
+function toggleArchive() {
+  showArchive = !showArchive;
+  document.getElementById('archive-list').style.display = showArchive ? 'flex' : 'none';
+  if (showArchive) document.getElementById('archive-list').style.flexDirection = 'column';
+  document.getElementById('archive-arrow').classList.toggle('open', showArchive);
+  renderArchive();
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  var d = new Date(str + 'T00:00:00');
+  var today = new Date(); today.setHours(0,0,0,0);
+  var diff = Math.round((d - today) / 86400000);
+  if (diff < 0) return { text: 'Po termínu', overdue: true };
+  if (diff === 0) return { text: 'Dnes', overdue: false };
+  if (diff === 1) return { text: 'Zítra', overdue: false };
+  return { text: d.toLocaleDateString('cs-CZ', { day:'numeric', month:'short' }), overdue: false };
+}
+
+function makeTaskEl(t, isArchive) {
+  var el = document.createElement('div');
+  el.className = 'task-item' + (t.done ? ' done' : '');
+
+  var dateInfo = t.date ? formatDate(t.date) : null;
+
+  var metaHTML = '';
+  metaHTML += '<span class="task-priority ' + PRIORITY_CLASS[t.priority] + '">' + PRIORITY_LABELS[t.priority] + '</span>';
+  metaHTML += '<span class="task-cat ' + CAT_CLASS[t.cat] + '">' + CAT_LABELS[t.cat] + '</span>';
+  if (dateInfo) {
+    metaHTML += '<span class="task-date' + (dateInfo.overdue ? ' overdue' : '') + '">📅 ' + dateInfo.text + '</span>';
+  }
+
+  var archiveBtn = !isArchive
+    ? '<button class="btn-delete" title="Archivovat" onclick="archiveTask(' + t.id + ')">📦</button>'
+    : '<button class="btn-delete" title="Smazat" onclick="deleteTask(' + t.id + ')">🗑️</button>';
+
+  el.innerHTML =
+    '<div class="task-check" onclick="toggleDone(' + t.id + ')">' + (t.done ? '✓' : '') + '</div>' +
+    '<div class="task-body">' +
+      '<div class="task-name">' + escHtml(t.name) + '</div>' +
+      '<div class="task-meta">' + metaHTML + '</div>' +
+    '</div>' +
+    archiveBtn;
+
+  return el;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderFilters() {
+  var wrap = document.getElementById('filters');
+  wrap.innerHTML = '';
+  var cats = [['vse','Vše'],['prace','💼 Práce'],['osobni','👤 Osobní'],['nakupy','🛒 Nákupy'],['zdravi','💪 Zdraví'],['jine','✨ Jiné']];
+  cats.forEach(function(c) {
+    var btn = document.createElement('button');
+    btn.className = 'filter-btn' + (filterCat === c[0] ? ' active' : '');
+    btn.textContent = c[1];
+    btn.onclick = function() { filterCat = c[0]; render(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderArchive() {
+  if (!showArchive) return;
+  var archiveEl = document.getElementById('archive-list');
+  archiveEl.innerHTML = '';
+  var archived = tasks.filter(function(t){ return t.archived; });
+  if (archived.length === 0) {
+    archiveEl.innerHTML = '<div class="empty-state"><div class="empty-emoji">📦</div><div class="empty-text">Archiv je prázdný.</div></div>';
+    return;
+  }
+  archived.forEach(function(t) {
+    archiveEl.appendChild(makeTaskEl(t, true));
+  });
+}
+
+function render() {
+  var active = tasks.filter(function(t){ return !t.archived; });
+  var filtered = active.filter(function(t){
+    var matchCat = filterCat === 'vse' || t.cat === filterCat;
+    return matchCat;
+  });
+
+  var done = active.filter(function(t){ return t.done; }).length;
+  var pending = active.filter(function(t){ return !t.done; }).length;
+  var total = active.length;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-pending').textContent = pending;
+
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  var archived = tasks.filter(function(t){ return t.archived; }).length;
+  document.getElementById('archive-label').textContent = 'Archiv (' + archived + ')';
+
+  var list = document.getElementById('task-list');
+  list.innerHTML = '';
+
+  var activeTasks = filtered.filter(function(t){ return !t.done; });
+  var doneTasks = filtered.filter(function(t){ return t.done && !t.archived; });
+  var all = activeTasks.concat(doneTasks);
+
+  if (all.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-emoji">' + (tasks.length === 0 ? '🎉' : '🔍') + '</div><div class="empty-text">' + (tasks.length === 0 ? 'Žádné úkoly.<br>Přidej svůj první!' : 'Žádné úkoly v této kategorii.') + '</div></div>';
+  } else {
+    all.forEach(function(t) { list.appendChild(makeTaskEl(t, false)); });
+  }
+
+  renderFilters();
+  renderArchive();
+}
+
+load();
+render();
+</script>
+</body>
+</html>
