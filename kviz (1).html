@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kvíz generátor</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f7f5; --surface: #fff; --border: #e8e8e4; --border2: #d4d0c8;
+    --text: #1a1a1a; --text2: #6b7280; --muted: #bbb;
+    --c1: #8b5cf6; --c1bg: #f5f3ff; --c1border: #ddd6fe;
+    --c2: #0ea5e9; --c2bg: #f0f9ff; --c2border: #bae6fd;
+    --c3: #16a34a; --c3bg: #f0fdf4; --c3border: #bbf7d0;
+    --c4: #ef4444; --c4bg: #fef2f2; --c4border: #fecaca;
+    --c5: #f59e0b; --c5bg: #fffbeb; --c5border: #fde68a;
+    --radius: 14px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.04)} 100%{transform:scale(1)} }
+  @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+  .navbar { background: rgba(247,247,245,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .navbar-brand { display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+  .nav-back { font-size:0.8rem; color:var(--text2); text-decoration:none; font-weight:600; transition:color 0.2s; }
+  .nav-back:hover { color:var(--text); }
+
+  .main { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  /* VIEWS */
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* ===== SETUP VIEW ===== */
+  .page-header { margin-bottom: 2rem; animation: fadeUp 0.4s ease; }
+  .page-title { font-family:'Fraunces',serif; font-size:clamp(1.6rem,3vw,2.2rem); font-weight:700; letter-spacing:-0.03em; margin-bottom:0.35rem; }
+  .page-sub { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+  .form-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:1.5rem; margin-bottom:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.04); animation: fadeUp 0.4s 0.05s ease both; }
+  .form-card-title { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text2); margin-bottom:1rem; }
+  .form-label { display:block; font-size:0.72rem; font-weight:600; color:var(--text2); letter-spacing:0.04em; text-transform:uppercase; margin-bottom:0.45rem; }
+  .form-input { width:100%; padding:0.7rem 1rem; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.88rem; color:var(--text); background:var(--bg); outline:none; transition:border-color 0.2s; }
+  .form-input:focus { border-color:var(--c1); box-shadow:0 0 0 3px rgba(139,92,246,0.08); }
+  .form-input::placeholder { color:var(--muted); }
+  .form-select { width:100%; padding:0.65rem 0.9rem; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.82rem; color:var(--text); background:var(--bg); outline:none; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:2rem; transition:border-color 0.2s; }
+  .form-select:focus { border-color:var(--c1); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-bottom:0.85rem; }
+  .form-group { display:flex; flex-direction:column; gap:0.4rem; }
+
+  .btn-generate { width:100%; padding:0.85rem; background:var(--c1); border:none; border-radius:12px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; transition:opacity 0.2s, transform 0.15s; box-shadow:0 4px 14px rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; gap:8px; animation: fadeUp 0.4s 0.1s ease both; }
+  .btn-generate:hover:not(:disabled) { opacity:0.88; transform:translateY(-1px); }
+  .btn-generate:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+  .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+  .error-box { display:none; background:#fef2f2; border:1.5px solid #fecaca; border-radius:10px; padding:0.9rem 1rem; font-size:0.8rem; color:#ef4444; margin-top:0.75rem; }
+
+  /* ===== QUIZ VIEW ===== */
+  .quiz-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:0.75rem; animation: fadeUp 0.4s ease; }
+  .quiz-title { font-family:'Fraunces',serif; font-size:1.3rem; font-weight:700; letter-spacing:-0.02em; }
+  .quiz-meta { font-size:0.75rem; color:var(--text2); margin-top:2px; }
+
+  .quiz-progress { margin-bottom:1.5rem; animation: fadeUp 0.4s 0.05s ease both; }
+  .progress-bar { height:6px; background:var(--border); border-radius:20px; overflow:hidden; margin-bottom:0.5rem; }
+  .progress-fill { height:100%; background:linear-gradient(90deg, var(--c1), var(--c2)); border-radius:20px; transition:width 0.4s ease; }
+  .progress-label { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text2); font-weight:600; }
+
+  .score-row { display:grid; grid-template-columns:repeat(3,1fr); gap:0.65rem; margin-bottom:1.5rem; animation: fadeUp 0.4s 0.08s ease both; }
+  .score-card { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:0.75rem; text-align:center; }
+  .score-num { font-size:1.5rem; font-weight:700; font-family:'Fraunces',serif; line-height:1; margin-bottom:0.2rem; }
+  .score-label { font-size:0.65rem; color:var(--text2); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; }
+  .score-card.correct .score-num { color:var(--c3); }
+  .score-card.wrong .score-num { color:var(--c4); }
+  .score-card.remaining .score-num { color:var(--c1); }
+
+  /* QUESTION CARD */
+  .question-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:1.5rem; margin-bottom:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.05); animation: slideIn 0.3s ease; }
+  .q-number { font-size:0.65rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text2); margin-bottom:0.75rem; display:flex; align-items:center; gap:8px; }
+  .q-type-badge { padding:0.2rem 0.6rem; border-radius:20px; font-size:0.6rem; font-weight:700; }
+  .q-type-mc { background:var(--c2bg); color:var(--c2); border:1px solid var(--c2border); }
+  .q-type-open { background:var(--c5bg); color:var(--c5); border:1px solid var(--c5border); }
+  .q-text { font-size:1rem; font-weight:600; line-height:1.5; margin-bottom:1.25rem; letter-spacing:-0.01em; }
+
+  /* MC OPTIONS */
+  .mc-options { display:flex; flex-direction:column; gap:0.5rem; }
+  .mc-option { padding:0.75rem 1rem; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; font-size:0.88rem; display:flex; align-items:center; gap:10px; transition:all 0.15s; background:var(--bg); }
+  .mc-option:hover:not(.disabled) { border-color:var(--c1); background:var(--c1bg); }
+  .mc-option.selected { border-color:var(--c1); background:var(--c1bg); }
+  .mc-option.correct { border-color:var(--c3); background:var(--c3bg); animation:pop 0.3s ease; }
+  .mc-option.wrong { border-color:var(--c4); background:var(--c4bg); animation:shake 0.3s ease; }
+  .mc-option.show-correct { border-color:var(--c3); background:var(--c3bg); }
+  .mc-option.disabled { cursor:default; }
+  .mc-letter { width:24px; height:24px; border-radius:7px; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:700; flex-shrink:0; transition:all 0.15s; }
+  .mc-option.correct .mc-letter { background:var(--c3); color:#fff; }
+  .mc-option.wrong .mc-letter { background:var(--c4); color:#fff; }
+  .mc-option.show-correct .mc-letter { background:var(--c3); color:#fff; }
+  .mc-option.selected .mc-letter { background:var(--c1); color:#fff; }
+
+  /* OPEN QUESTION */
+  .open-input { width:100%; padding:0.75rem 1rem; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.9rem; color:var(--text); background:var(--bg); outline:none; transition:border-color 0.2s; }
+  .open-input:focus { border-color:var(--c1); box-shadow:0 0 0 3px rgba(139,92,246,0.08); }
+  .open-input::placeholder { color:var(--muted); }
+  .open-input:disabled { opacity:0.6; cursor:default; }
+  .btn-check { margin-top:0.75rem; padding:0.6rem 1.2rem; background:var(--c1); border:none; border-radius:10px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; transition:opacity 0.2s; }
+  .btn-check:hover { opacity:0.88; }
+  .btn-check:disabled { opacity:0.4; cursor:default; }
+
+  /* ANSWER REVEAL */
+  .answer-box { margin-top:0.85rem; padding:0.85rem 1rem; border-radius:10px; font-size:0.85rem; line-height:1.5; display:none; animation:fadeIn 0.3s ease; }
+  .answer-box.correct { background:var(--c3bg); border:1px solid var(--c3border); color:var(--c3); }
+  .answer-box.wrong { background:var(--c4bg); border:1px solid var(--c4border); color:var(--c4); }
+  .answer-box .correct-answer { margin-top:0.35rem; color:var(--text); font-size:0.82rem; }
+
+  /* NEXT BTN */
+  .btn-next { width:100%; padding:0.8rem; background:var(--text); border:none; border-radius:12px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:700; cursor:pointer; margin-top:0.75rem; transition:opacity 0.2s, transform 0.15s; display:none; }
+  .btn-next:hover { opacity:0.85; transform:translateY(-1px); }
+
+  /* RESULTS VIEW */
+  .results-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:2rem; text-align:center; margin-bottom:1.5rem; box-shadow:0 2px 16px rgba(0,0,0,0.06); animation: fadeUp 0.4s ease; }
+  .results-emoji { font-size:3rem; margin-bottom:1rem; }
+  .results-score { font-family:'Fraunces',serif; font-size:3rem; font-weight:700; letter-spacing:-0.04em; margin-bottom:0.25rem; }
+  .results-score.great { color:var(--c3); }
+  .results-score.ok { color:var(--c5); }
+  .results-score.bad { color:var(--c4); }
+  .results-sub { font-size:0.85rem; color:var(--text2); }
+
+  .results-stats { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.5rem; animation: fadeUp 0.4s 0.05s ease both; }
+  .results-stat { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:1rem; text-align:center; }
+  .results-stat-num { font-size:1.8rem; font-weight:700; font-family:'Fraunces',serif; margin-bottom:0.2rem; }
+  .results-stat-label { font-size:0.72rem; color:var(--text2); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+  .results-stat.correct .results-stat-num { color:var(--c3); }
+  .results-stat.wrong .results-stat-num { color:var(--c4); }
+
+  .btn-restart { width:100%; padding:0.85rem; background:var(--c1); border:none; border-radius:12px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; margin-bottom:0.75rem; transition:opacity 0.2s, transform 0.15s; box-shadow:0 4px 14px rgba(139,92,246,0.3); animation: fadeUp 0.4s 0.1s ease both; }
+  .btn-restart:hover { opacity:0.88; transform:translateY(-1px); }
+  .btn-new { width:100%; padding:0.85rem; background:transparent; border:1.5px solid var(--border); border-radius:12px; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:600; cursor:pointer; transition:all 0.2s; animation: fadeUp 0.4s 0.15s ease both; }
+  .btn-new:hover { border-color:var(--border2); color:var(--text); }
+
+  .review-list { display:flex; flex-direction:column; gap:0.5rem; animation: fadeUp 0.4s 0.1s ease both; }
+  .review-item { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:0.9rem 1.1rem; }
+  .review-item.correct { border-color:var(--c3border); }
+  .review-item.wrong { border-color:var(--c4border); }
+  .review-q { font-size:0.85rem; font-weight:600; margin-bottom:0.35rem; }
+  .review-a { font-size:0.78rem; color:var(--text2); }
+  .review-a span { font-weight:600; }
+  .review-a .ok { color:var(--c3); }
+  .review-a .bad { color:var(--c4); }
+
+  @media (max-width:600px) { .form-row { grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">🎯 Kvíz generátor</div>
+  <a href="index.html" class="nav-back">← Dashboard</a>
+</nav>
+
+<main class="main">
+
+  <!-- SETUP VIEW -->
+  <div class="view active" id="view-setup">
+    <div class="page-header">
+      <div class="page-title">Kvíz generátor</div>
+      <div class="page-sub">Zadej téma a AI vygeneruje kvíz s otázkami na procvičení.</div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-title">Nastavení kvízu</div>
+      <div class="form-group" style="margin-bottom:0.85rem">
+        <label class="form-label">Téma kvízu</label>
+        <input class="form-input" id="topic" placeholder="např. Druhá světová válka, Fotosyntéza, Pythagorova věta...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Jazyk</label>
+          <select class="form-select" id="lang">
+            <option value="cs">🇨🇿 Čeština</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="sk">🇸🇰 Slovenčina</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Počet otázek</label>
+          <select class="form-select" id="count">
+            <option value="5">5 otázek</option>
+            <option value="8" selected>8 otázek</option>
+            <option value="10">10 otázek</option>
+            <option value="15">15 otázek</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Obtížnost</label>
+          <select class="form-select" id="difficulty">
+            <option value="easy">Lehká</option>
+            <option value="medium" selected>Střední</option>
+            <option value="hard">Těžká</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-generate" id="gen-btn" onclick="generateQuiz()">🎯 Vygenerovat kvíz</button>
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <!-- QUIZ VIEW -->
+  <div class="view" id="view-quiz">
+    <div class="quiz-header">
+      <div>
+        <div class="quiz-title" id="quiz-title"></div>
+        <div class="quiz-meta" id="quiz-meta"></div>
+      </div>
+    </div>
+
+    <div class="quiz-progress">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="progress-label">
+        <span id="progress-text">Otázka 1 z 8</span>
+        <span id="progress-pct">0%</span>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-card correct"><div class="score-num" id="score-correct">0</div><div class="score-label">Správně</div></div>
+      <div class="score-card wrong"><div class="score-num" id="score-wrong">0</div><div class="score-label">Špatně</div></div>
+      <div class="score-card remaining"><div class="score-num" id="score-remaining">8</div><div class="score-label">Zbývá</div></div>
+    </div>
+
+    <div id="question-container"></div>
+  </div>
+
+  <!-- RESULTS VIEW -->
+  <div class="view" id="view-results">
+    <div class="results-card">
+      <div class="results-emoji" id="results-emoji">🏆</div>
+      <div class="results-score" id="results-score"></div>
+      <div class="results-sub" id="results-sub"></div>
+    </div>
+
+    <div class="results-stats">
+      <div class="results-stat correct"><div class="results-stat-num" id="res-correct">0</div><div class="results-stat-label">Správně</div></div>
+      <div class="results-stat wrong"><div class="results-stat-num" id="res-wrong">0</div><div class="results-stat-label">Špatně</div></div>
+    </div>
+
+    <button class="btn-restart" onclick="restartQuiz()">🔄 Zkusit znovu</button>
+    <button class="btn-new" onclick="newQuiz()">✨ Nový kvíz</button>
+
+    <div style="margin:1.5rem 0 0.75rem; font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text2);">Přehled odpovědí</div>
+    <div class="review-list" id="review-list"></div>
+  </div>
+
+</main>
+
+<script>
+var questions = [];
+var currentQ = 0;
+var correct = 0;
+var wrong = 0;
+var answered = [];
+var quizTopic = '';
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function generateQuiz() {
+  var topic = document.getElementById('topic').value.trim();
+  if (!topic) { showError('Zadej prosím téma kvízu.'); return; }
+
+  var lang = document.getElementById('lang').value;
+  var count = document.getElementById('count').value;
+  var difficulty = document.getElementById('difficulty').value;
+
+  var langMap = { cs: 'Czech', en: 'English', sk: 'Slovak' };
+  var diffMap = { easy: 'easy, suitable for beginners', medium: 'medium difficulty', hard: 'challenging, requiring deeper knowledge' };
+
+  hideError();
+  setLoading(true);
+  quizTopic = topic;
+
+  var prompt = 'Create a quiz about "' + topic + '" with exactly ' + count + ' questions.\n\nLanguage: ' + langMap[lang] + '\nDifficulty: ' + diffMap[difficulty] + '\n\nMix of question types: roughly half multiple choice (type: "mc") and half open questions (type: "open").\n\nRespond ONLY with a valid JSON array, no markdown:\n[\n  {\n    "type": "mc",\n    "question": "Question text?",\n    "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],\n    "correct": 0,\n    "explanation": "Brief explanation why this is correct"\n  },\n  {\n    "type": "open",\n    "question": "Question text?",\n    "answer": "Expected answer",\n    "keywords": ["key1", "key2"],\n    "explanation": "Brief explanation"\n  }\n]';
+
+  fetch('https://moje-api.matejda83.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2500,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    var raw = data.content.map(function(i){ return i.text||''; }).join('');
+    var clean = raw.replace(/```json|```/g,'').trim();
+    questions = JSON.parse(clean);
+    answered = new Array(questions.length).fill(null);
+    currentQ = 0; correct = 0; wrong = 0;
+    startQuiz();
+  })
+  .catch(function() { showError('Něco se pokazilo. Zkus to znovu.'); })
+  .finally(function(){ setLoading(false); });
+}
+
+function startQuiz() {
+  var langLabels = { cs: 'Čeština', en: 'English', sk: 'Slovenčina' };
+  var diffLabels = { easy: 'Lehká', medium: 'Střední', hard: 'Těžká' };
+  document.getElementById('quiz-title').textContent = quizTopic;
+  document.getElementById('quiz-meta').textContent =
+    questions.length + ' otázek · ' +
+    langLabels[document.getElementById('lang').value] + ' · ' +
+    diffLabels[document.getElementById('difficulty').value];
+  document.getElementById('score-remaining').textContent = questions.length;
+  showView('view-quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  if (currentQ >= questions.length) { showResults(); return; }
+
+  var q = questions[currentQ];
+  var pct = Math.round((currentQ / questions.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = 'Otázka ' + (currentQ+1) + ' z ' + questions.length;
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('score-correct').textContent = correct;
+  document.getElementById('score-wrong').textContent = wrong;
+  document.getElementById('score-remaining').textContent = questions.length - currentQ;
+
+  var container = document.getElementById('question-container');
+  container.innerHTML = '';
+
+  var card = document.createElement('div');
+  card.className = 'question-card';
+
+  var typeLabel = q.type === 'mc' ? '<span class="q-type-badge q-type-mc">Výběr odpovědi</span>' : '<span class="q-type-badge q-type-open">Otevřená otázka</span>';
+  card.innerHTML = '<div class="q-number">Otázka ' + (currentQ+1) + ' ' + typeLabel + '</div><div class="q-text">' + escHtml(q.question) + '</div>';
+
+  if (q.type === 'mc') {
+    var opts = document.createElement('div');
+    opts.className = 'mc-options';
+    var letters = ['A', 'B', 'C', 'D'];
+    q.options.forEach(function(opt, i) {
+      var btn = document.createElement('div');
+      btn.className = 'mc-option';
+      btn.innerHTML = '<span class="mc-letter">' + letters[i] + '</span><span>' + escHtml(opt.replace(/^[ABCD]\)\s*/,'')) + '</span>';
+      btn.onclick = function() { selectMC(i, q, card); };
+      opts.appendChild(btn);
+    });
+    card.appendChild(opts);
+  } else {
+    var inp = document.createElement('input');
+    inp.className = 'open-input';
+    inp.placeholder = 'Napiš svou odpověď...';
+    inp.id = 'open-answer';
+    inp.addEventListener('keydown', function(e){ if(e.key==='Enter') checkOpen(q, card); });
+    card.appendChild(inp);
+
+    var checkBtn = document.createElement('button');
+    checkBtn.className = 'btn-check';
+    checkBtn.textContent = 'Zkontrolovat';
+    checkBtn.id = 'check-btn';
+    checkBtn.onclick = function() { checkOpen(q, card); };
+    card.appendChild(checkBtn);
+  }
+
+  var answerBox = document.createElement('div');
+  answerBox.className = 'answer-box';
+  answerBox.id = 'answer-box';
+  card.appendChild(answerBox);
+
+  var nextBtn = document.createElement('button');
+  nextBtn.className = 'btn-next';
+  nextBtn.textContent = currentQ < questions.length - 1 ? 'Další otázka →' : 'Zobrazit výsledky →';
+  nextBtn.id = 'next-btn';
+  nextBtn.onclick = function() { currentQ++; renderQuestion(); };
+  card.appendChild(nextBtn);
+
+  container.appendChild(card);
+  if (q.type === 'open') document.getElementById('open-answer').focus();
+}
+
+function selectMC(selected, q, card) {
+  var opts = card.querySelectorAll('.mc-option');
+  if (opts[0].classList.contains('disabled')) return;
+
+  opts.forEach(function(o){ o.classList.add('disabled'); });
+  opts[selected].classList.add('selected');
+
+  var isCorrect = selected === q.correct;
+  if (isCorrect) {
+    opts[selected].classList.add('correct');
+    correct++;
+    showAnswer(true, q.explanation, null);
+  } else {
+    opts[selected].classList.add('wrong');
+    opts[q.correct].classList.add('show-correct');
+    wrong++;
+    showAnswer(false, q.explanation, q.options[q.correct].replace(/^[ABCD]\)\s*/,''));
+  }
+  answered[currentQ] = { correct: isCorrect, question: q.question, userAnswer: q.options[selected], correctAnswer: q.options[q.correct] };
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+function checkOpen(q, card) {
+  var userAnswer = document.getElementById('open-answer').value.trim();
+  if (!userAnswer) return;
+
+  document.getElementById('open-answer').disabled = true;
+  document.getElementById('check-btn').disabled = true;
+
+  var keywords = q.keywords || [];
+  var lowerAnswer = userAnswer.toLowerCase();
+  var lowerCorrect = q.answer.toLowerCase();
+  var isCorrect = lowerAnswer.includes(lowerCorrect.substring(0, Math.floor(lowerCorrect.length * 0.6))) ||
+    keywords.some(function(k){ return lowerAnswer.includes(k.toLowerCase()); }) ||
+    lowerAnswer === lowerCorrect;
+
+  if (isCorrect) { correct++; } else { wrong++; }
+  showAnswer(isCorrect, q.explanation, q.answer);
+  answered[currentQ] = { correct: isCorrect, question: q.question, userAnswer: userAnswer, correctAnswer: q.answer };
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+function showAnswer(isCorrect, explanation, correctAnswer) {
+  var box = document.getElementById('answer-box');
+  box.className = 'answer-box ' + (isCorrect ? 'correct' : 'wrong');
+  box.style.display = 'block';
+  var icon = isCorrect ? '✓ Správně!' : '✗ Špatně!';
+  var html = '<strong>' + icon + '</strong>';
+  if (explanation) html += ' ' + escHtml(explanation);
+  if (!isCorrect && correctAnswer) html += '<div class="correct-answer">Správná odpověď: <strong>' + escHtml(correctAnswer) + '</strong></div>';
+  box.innerHTML = html;
+}
+
+function showResults() {
+  var total = questions.length;
+  var pct = Math.round((correct / total) * 100);
+  var emoji = pct >= 80 ? '🏆' : pct >= 60 ? '👍' : pct >= 40 ? '😅' : '📚';
+  var scoreClass = pct >= 80 ? 'great' : pct >= 50 ? 'ok' : 'bad';
+  var sub = pct >= 80 ? 'Výborně! Látku zvládáš skvěle!' : pct >= 60 ? 'Dobrý výkon, trochu procvičit.' : pct >= 40 ? 'Ještě to chce trochu učení.' : 'Doporučuji látku zopakovat.';
+
+  document.getElementById('results-emoji').textContent = emoji;
+  document.getElementById('results-score').textContent = pct + '%';
+  document.getElementById('results-score').className = 'results-score ' + scoreClass;
+  document.getElementById('results-sub').textContent = sub;
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = wrong;
+
+  var reviewList = document.getElementById('review-list');
+  reviewList.innerHTML = '';
+  answered.forEach(function(a, i) {
+    if (!a) return;
+    var item = document.createElement('div');
+    item.className = 'review-item ' + (a.correct ? 'correct' : 'wrong');
+    item.innerHTML =
+      '<div class="review-q">' + escHtml(a.question) + '</div>' +
+      '<div class="review-a">Tvá odpověď: <span class="' + (a.correct?'ok':'bad') + '">' + escHtml(a.userAnswer) + '</span>' +
+      (!a.correct ? ' · Správně: <span class="ok">' + escHtml(a.correctAnswer) + '</span>' : '') + '</div>';
+    reviewList.appendChild(item);
+  });
+
+  showView('view-results');
+}
+
+function restartQuiz() {
+  answered = new Array(questions.length).fill(null);
+  currentQ = 0; correct = 0; wrong = 0;
+  var shuffled = questions.slice().sort(function(){ return Math.random()-0.5; });
+  questions = shuffled;
+  showView('view-quiz');
+  renderQuestion();
+}
+
+function newQuiz() {
+  questions = []; currentQ = 0; correct = 0; wrong = 0; answered = [];
+  document.getElementById('topic').value = '';
+  showView('view-setup');
+}
+
+function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function setLoading(on) {
+  var btn = document.getElementById('gen-btn');
+  btn.disabled = on;
+  btn.innerHTML = on ? '<div class="spinner"></div> Generuji kvíz...' : '🎯 Vygenerovat kvíz';
+}
+function showError(msg) { var b=document.getElementById('error-box'); b.textContent=msg; b.style.display='block'; }
+function hideError() { document.getElementById('error-box').style.display='none'; }
+</script>
+</body>
+</html>
