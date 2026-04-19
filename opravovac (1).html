@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opravovač textu</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f7f5; --surface: #fff; --border: #e8e8e4; --border2: #d4d0c8;
+    --text: #1a1a1a; --text2: #6b7280; --accent: #2563eb; --accent-bg: #eff6ff;
+    --del: #ef4444; --del-bg: #fef2f2; --ins: #16a34a; --ins-bg: #f0fdf4;
+    --radius: 14px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .navbar { background: rgba(247,247,245,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .navbar-brand { display:flex; align-items:center; gap:10px; font-family:'Lora',serif; font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+  .nav-back { font-size:0.8rem; color:var(--text2); text-decoration:none; font-weight:600; transition:color 0.2s; }
+  .nav-back:hover { color:var(--text); }
+
+  .main { max-width: 920px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  .page-header { margin-bottom: 2rem; animation: fadeUp 0.4s ease; }
+  .page-title { font-family:'Lora',serif; font-size:clamp(1.6rem,3vw,2.2rem); font-weight:700; letter-spacing:-0.03em; margin-bottom:0.35rem; }
+  .page-sub { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+  .top-options { display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.25rem; animation: fadeUp 0.4s 0.03s ease both; }
+  .opt-select { padding:0.55rem 0.9rem; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.82rem; color:var(--text); background:var(--surface); outline:none; cursor:pointer; transition:border-color 0.2s; }
+  .opt-select:focus { border-color:var(--accent); }
+
+  .editor-layout { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; animation: fadeUp 0.4s 0.06s ease both; }
+
+  .editor-panel { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.04); display:flex; flex-direction:column; }
+  .panel-header { display:flex; align-items:center; justify-content:space-between; padding:0.7rem 1rem; border-bottom:1px solid var(--border); background:var(--bg); flex-shrink:0; }
+  .panel-title { font-size:0.68rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text2); }
+
+  .btn-sm { padding:0.28rem 0.65rem; border:1.5px solid var(--border); border-radius:7px; background:var(--surface); font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.15s; }
+  .btn-sm:hover { border-color:var(--border2); color:var(--text); }
+
+  .editor-textarea { width:100%; border:none; outline:none; resize:none; font-family:'DM Sans',sans-serif; font-size:0.88rem; line-height:1.7; color:var(--text); background:transparent; padding:1rem; flex:1; min-height:220px; }
+  .editor-textarea::placeholder { color:#c4bcb0; }
+
+  .result-text { padding:1rem; font-size:0.88rem; line-height:1.7; min-height:220px; font-family:'DM Sans',sans-serif; flex:1; overflow-y:auto; }
+  .result-text.empty { display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:0.82rem; }
+
+  .char-count { padding:0.5rem 1rem; font-size:0.68rem; color:var(--text2); border-top:1px solid var(--border); text-align:right; background:var(--bg); }
+
+  .btn-generate { width:100%; padding:0.85rem; background:var(--accent); border:none; border-radius:12px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; transition:opacity 0.2s, transform 0.15s; box-shadow:0 4px 14px rgba(37,99,235,0.25); display:flex; align-items:center; justify-content:center; gap:8px; animation: fadeUp 0.4s 0.1s ease both; }
+  .btn-generate:hover:not(:disabled) { opacity:0.88; transform:translateY(-1px); }
+  .btn-generate:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+  .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+
+  .error-box { display:none; background:#fef2f2; border:1.5px solid #fecaca; border-radius:10px; padding:0.9rem 1rem; font-size:0.8rem; color:#ef4444; margin-top:0.75rem; }
+
+  /* RESULTS */
+  #results { display:none; margin-top:1.5rem; animation:fadeIn 0.4s ease; }
+
+  .results-tabs { display:flex; gap:0.5rem; margin-bottom:1rem; }
+  .tab-btn { padding:0.45rem 1rem; border:1.5px solid var(--border); border-radius:20px; background:var(--surface); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.15s; }
+  .tab-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* DIFF */
+  .diff-box { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:1.5rem; font-size:0.88rem; line-height:1.8; font-family:'DM Sans',sans-serif; box-shadow:0 2px 12px rgba(0,0,0,0.04); }
+  .diff-del { background:var(--del-bg); color:var(--del); text-decoration:line-through; border-radius:3px; padding:0 2px; }
+  .diff-ins { background:var(--ins-bg); color:var(--ins); border-radius:3px; padding:0 2px; font-weight:600; }
+
+  /* CLEAN TEXT */
+  .clean-box { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:1.5rem 2rem; font-family:'Lora',serif; font-size:0.95rem; line-height:1.85; box-shadow:0 2px 12px rgba(0,0,0,0.04); white-space:pre-wrap; }
+
+  /* ERRORS LIST */
+  .errors-list { display:flex; flex-direction:column; gap:0.65rem; }
+  .error-item { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:1rem 1.1rem; box-shadow:0 1px 6px rgba(0,0,0,0.04); }
+  .error-item-top { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.4rem; }
+  .error-badge { font-size:0.62rem; font-weight:700; letter-spacing:0.05em; padding:0.2rem 0.6rem; border-radius:20px; }
+  .badge-grammar { background:#fef2f2; color:#ef4444; }
+  .badge-style { background:#eff6ff; color:#2563eb; }
+  .badge-paragraph { background:#f0fdf4; color:#16a34a; }
+  .badge-other { background:#fefce8; color:#ca8a04; }
+  .error-original { font-size:0.82rem; color:var(--del); text-decoration:line-through; margin-bottom:0.2rem; }
+  .error-fixed { font-size:0.82rem; color:var(--ins); font-weight:600; margin-bottom:0.35rem; }
+  .error-explain { font-size:0.78rem; color:var(--text2); line-height:1.5; }
+
+  .copy-btn { display:flex; align-items:center; gap:6px; padding:0.5rem 0.9rem; border:1.5px solid var(--border); border-radius:10px; background:var(--surface); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.2s; margin-top:1rem; }
+  .copy-btn:hover { border-color:var(--border2); color:var(--text); }
+  .copy-btn.copied { border-color:#16a34a; color:#16a34a; }
+
+  .stats-row { display:flex; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .stat-pill { font-size:0.72rem; font-weight:600; padding:0.3rem 0.8rem; border-radius:20px; border:1px solid var(--border); background:var(--surface); color:var(--text2); }
+  .stat-pill.errors { color:var(--del); border-color:rgba(239,68,68,0.3); background:var(--del-bg); }
+  .stat-pill.ok { color:var(--ins); border-color:rgba(22,163,74,0.3); background:var(--ins-bg); }
+
+  @media (max-width: 640px) { .editor-layout { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">✍️ Opravovač textu</div>
+  <a href="index.html" class="nav-back">← Dashboard</a>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-title">Opravovač textu</div>
+    <div class="page-sub">Vlož text a AI opraví gramatiku, styl, odstavce a vysvětlí chyby.</div>
+  </div>
+
+  <div class="top-options">
+    <select class="opt-select" id="lang">
+      <option value="cs">🇨🇿 Čeština</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="sk">🇸🇰 Slovenčina</option>
+    </select>
+    <select class="opt-select" id="mode">
+      <option value="school">📚 Školní sloh</option>
+      <option value="formal">💼 Formální text</option>
+      <option value="casual">💬 Neformální text</option>
+      <option value="email">📧 Email</option>
+    </select>
+  </div>
+
+  <div class="editor-layout">
+    <div class="editor-panel">
+      <div class="panel-header">
+        <span class="panel-title">Původní text</span>
+        <button class="btn-sm" onclick="clearInput()">Smazat</button>
+      </div>
+      <textarea class="editor-textarea" id="input-text" placeholder="Vlož svůj text sem..." oninput="updateCount()"></textarea>
+      <div class="char-count" id="char-count">0 znaků</div>
+    </div>
+
+    <div class="editor-panel">
+      <div class="panel-header">
+        <span class="panel-title">Opravený text</span>
+        <button class="btn-sm" id="copy-clean-btn" onclick="copyClean()">Kopírovat</button>
+      </div>
+      <div class="result-text empty" id="preview-text">Opravený text se zobrazí zde</div>
+      <div class="char-count" id="char-count-out"></div>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="gen-btn" onclick="correct()">✍️ Opravit text</button>
+  <div class="error-box" id="error-box"></div>
+
+  <div id="results">
+    <div class="stats-row" id="stats-row"></div>
+    <div class="results-tabs">
+      <button class="tab-btn active" onclick="switchTab('diff', this)">🔍 Změny</button>
+      <button class="tab-btn" onclick="switchTab('errors', this)">📋 Vysvětlení chyb</button>
+    </div>
+
+    <div class="tab-content active" id="tab-diff">
+      <div class="diff-box" id="diff-content"></div>
+    </div>
+
+    <div class="tab-content" id="tab-errors">
+      <div class="errors-list" id="errors-list"></div>
+    </div>
+
+    <button class="copy-btn" id="copy-result-btn" onclick="copyResult()">📋 Kopírovat opravený text</button>
+  </div>
+</main>
+
+<script>
+var correctedText = '';
+var lastData = null;
+
+function clearInput() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('char-count').textContent = '0 znaků';
+  document.getElementById('preview-text').textContent = 'Opravený text se zobrazí zde';
+  document.getElementById('preview-text').className = 'result-text empty';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('char-count-out').textContent = '';
+}
+
+function updateCount() {
+  var n = document.getElementById('input-text').value.length;
+  document.getElementById('char-count').textContent = n + ' znaků';
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function correct() {
+  var text = document.getElementById('input-text').value.trim();
+  if (!text) { showError('Vlož prosím text k opravení.'); return; }
+  if (text.length < 20) { showError('Text je příliš krátký.'); return; }
+
+  hideError();
+  setLoading(true);
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('preview-text').className = 'result-text empty';
+  document.getElementById('preview-text').textContent = 'Opravuji...';
+
+  var langMap = { cs: 'Czech', en: 'English', sk: 'Slovak' };
+  var modeMap = { school: 'school essay', formal: 'formal text', casual: 'casual text', email: 'email' };
+  var lang = document.getElementById('lang').value;
+  var mode = document.getElementById('mode').value;
+
+  var prompt = 'You are a language correction expert. Correct the following ' + langMap[lang] + ' text (type: ' + modeMap[mode] + ').\n\nOriginal text:\n"""\n' + text + '\n"""\n\nFix: grammar, spelling, punctuation, style/fluency, paragraph structure.\n\nRespond ONLY with a valid JSON object, no markdown:\n{\n  "corrected": "the fully corrected text",\n  "errors": [\n    {\n      "type": "grammar|style|paragraph|other",\n      "original": "original fragment",\n      "fixed": "corrected fragment",\n      "explanation": "short explanation in ' + langMap[lang] + '"\n    }\n  ]\n}';
+
+  fetch('https://moje-api.matejda83.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    var raw = data.content.map(function(i){ return i.text||''; }).join('');
+    var clean = raw.replace(/```json|```/g,'').trim();
+    var result = JSON.parse(clean);
+    lastData = result;
+    correctedText = result.corrected;
+    renderResults(text, result);
+  })
+  .catch(function() {
+    showError('Něco se pokazilo. Zkontroluj připojení a zkus znovu.');
+    document.getElementById('preview-text').textContent = 'Opravený text se zobrazí zde';
+    document.getElementById('preview-text').className = 'result-text empty';
+  })
+  .finally(function(){ setLoading(false); });
+}
+
+function renderResults(original, result) {
+  // Preview
+  var prev = document.getElementById('preview-text');
+  prev.className = 'result-text';
+  prev.textContent = result.corrected;
+  document.getElementById('char-count-out').textContent = result.corrected.length + ' znaků';
+
+  // Stats
+  var statsRow = document.getElementById('stats-row');
+  var n = result.errors ? result.errors.length : 0;
+  statsRow.innerHTML = n === 0
+    ? '<span class="stat-pill ok">✓ Žádné chyby nenalezeny</span>'
+    : '<span class="stat-pill errors">✗ ' + n + ' ' + (n===1?'chyba':n<5?'chyby':'chyb') + '</span><span class="stat-pill">Opraveno</span>';
+
+  // Diff
+  renderDiff(original, result.corrected);
+
+  // Errors
+  var errList = document.getElementById('errors-list');
+  errList.innerHTML = '';
+  if (!result.errors || result.errors.length === 0) {
+    errList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text2);font-size:0.85rem;">Žádné chyby k vysvětlení. 🎉</div>';
+  } else {
+    var badgeMap = { grammar:'badge-grammar', style:'badge-style', paragraph:'badge-paragraph', other:'badge-other' };
+    var labelMap = { grammar:'Gramatika', style:'Styl', paragraph:'Odstavec', other:'Jiné' };
+    result.errors.forEach(function(e) {
+      var item = document.createElement('div');
+      item.className = 'error-item';
+      item.innerHTML =
+        '<div class="error-item-top"><span class="error-badge ' + (badgeMap[e.type]||'badge-other') + '">' + (labelMap[e.type]||'Jiné') + '</span></div>' +
+        (e.original ? '<div class="error-original">' + escHtml(e.original) + '</div>' : '') +
+        (e.fixed ? '<div class="error-fixed">→ ' + escHtml(e.fixed) + '</div>' : '') +
+        '<div class="error-explain">' + escHtml(e.explanation) + '</div>';
+      errList.appendChild(item);
+    });
+  }
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderDiff(original, corrected) {
+  var diffBox = document.getElementById('diff-content');
+  // Simple word-level diff
+  var origWords = original.split(/(\s+)/);
+  var corrWords = corrected.split(/(\s+)/);
+
+  // LCS-based simple diff
+  var html = '';
+  var i = 0, j = 0;
+  var maxLen = Math.max(origWords.length, corrWords.length);
+
+  // Build simple diff by comparing chunks
+  while (i < origWords.length || j < corrWords.length) {
+    var ow = origWords[i] || '';
+    var cw = corrWords[j] || '';
+
+    if (ow === cw) {
+      html += escHtml(ow);
+      i++; j++;
+    } else {
+      // Look ahead for match
+      var foundOrig = -1, foundCorr = -1;
+      for (var k = 1; k <= 6; k++) {
+        if (j + k < corrWords.length && origWords[i] === corrWords[j+k]) { foundOrig = k; break; }
+      }
+      for (var k = 1; k <= 6; k++) {
+        if (i + k < origWords.length && origWords[i+k] === corrWords[j]) { foundCorr = k; break; }
+      }
+
+      if (foundOrig !== -1 && (foundCorr === -1 || foundOrig <= foundCorr)) {
+        // Insert corrected words
+        for (var k = 0; k < foundOrig; k++) {
+          if (corrWords[j+k] && corrWords[j+k].trim()) html += '<span class="diff-ins">' + escHtml(corrWords[j+k]) + '</span>';
+          else html += escHtml(corrWords[j+k]||'');
+        }
+        j += foundOrig;
+      } else if (foundCorr !== -1) {
+        // Delete original words
+        for (var k = 0; k < foundCorr; k++) {
+          if (origWords[i+k] && origWords[i+k].trim()) html += '<span class="diff-del">' + escHtml(origWords[i+k]) + '</span>';
+          else html += escHtml(origWords[i+k]||'');
+        }
+        i += foundCorr;
+      } else {
+        if (ow && ow.trim()) html += '<span class="diff-del">' + escHtml(ow) + '</span>';
+        else html += escHtml(ow);
+        if (cw && cw.trim()) html += '<span class="diff-ins">' + escHtml(cw) + '</span>';
+        else html += escHtml(cw);
+        i++; j++;
+      }
+    }
+  }
+
+  diffBox.innerHTML = html;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyClean() {
+  if (!correctedText) return;
+  navigator.clipboard.writeText(correctedText).then(function() {
+    var btn = document.getElementById('copy-clean-btn');
+    btn.textContent = '✓ Zkopírováno';
+    setTimeout(function(){ btn.textContent = 'Kopírovat'; }, 2000);
+  });
+}
+
+function copyResult() {
+  if (!correctedText) return;
+  navigator.clipboard.writeText(correctedText).then(function() {
+    var btn = document.getElementById('copy-result-btn');
+    btn.textContent = '✓ Zkopírováno!';
+    btn.classList.add('copied');
+    setTimeout(function(){ btn.textContent = '📋 Kopírovat opravený text'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function setLoading(on) {
+  var btn = document.getElementById('gen-btn');
+  btn.disabled = on;
+  btn.innerHTML = on ? '<div class="spinner"></div> Opravuji...' : '✍️ Opravit text';
+}
+
+function showError(msg) { var b=document.getElementById('error-box'); b.textContent=msg; b.style.display='block'; }
+function hideError() { document.getElementById('error-box').style.display='none'; }
+</script>
+</body>
+</html>
