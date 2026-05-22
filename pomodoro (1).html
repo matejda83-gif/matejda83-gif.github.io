@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f7f5; --surface: #fff; --border: #e8e8e4; --border2: #d4d0c8;
+    --text: #1a1a1a; --text2: #6b7280; --muted: #bbb;
+    --work: #ef4444; --work-bg: #fef2f2; --work-border: #fecaca;
+    --break: #16a34a; --break-bg: #f0fdf4; --break-border: #bbf7d0;
+    --long: #0ea5e9; --long-bg: #f0f9ff; --long-border: #bae6fd;
+    --radius: 14px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.02)} }
+
+  .navbar { background: rgba(247,247,245,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .navbar-brand { display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+  .nav-back { font-size:0.8rem; color:var(--text2); text-decoration:none; font-weight:600; transition:color 0.2s; }
+  .nav-back:hover { color:var(--text); }
+
+  .main { max-width: 560px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  .page-header { margin-bottom: 2rem; animation: fadeUp 0.4s ease; }
+  .page-title { font-family:'Fraunces',serif; font-size:clamp(1.6rem,3vw,2.2rem); font-weight:700; letter-spacing:-0.03em; margin-bottom:0.35rem; }
+  .page-sub { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+  /* MODE TABS */
+  .mode-tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:4px; animation: fadeUp 0.4s 0.03s ease both; }
+  .mode-tab { flex:1; padding:0.55rem; border:none; border-radius:9px; background:transparent; font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.2s; text-align:center; }
+  .mode-tab.work.active { background:var(--work); color:#fff; box-shadow:0 2px 8px rgba(239,68,68,0.3); }
+  .mode-tab.brk.active { background:var(--break); color:#fff; box-shadow:0 2px 8px rgba(22,163,74,0.3); }
+  .mode-tab.long.active { background:var(--long); color:#fff; box-shadow:0 2px 8px rgba(14,165,233,0.3); }
+
+  /* TIMER CARD */
+  .timer-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:2.5rem 1.5rem 2rem; text-align:center; margin-bottom:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.04); animation: fadeUp 0.4s 0.06s ease both; }
+
+  .ring-wrap { position:relative; width:200px; height:200px; margin:0 auto 1.75rem; }
+  .ring-svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-bg { fill:none; stroke:var(--border); stroke-width:7; }
+  .ring-fill { fill:none; stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke 0.4s; }
+  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+  .timer-display { font-family:'Fraunces',serif; font-size:3rem; font-weight:700; letter-spacing:-0.03em; line-height:1; }
+  .timer-mode-label { font-size:0.72rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text2); }
+
+  .controls { display:flex; align-items:center; justify-content:center; gap:1rem; margin-bottom:1.25rem; }
+  .btn-main { width:60px; height:60px; border-radius:50%; border:none; cursor:pointer; font-size:1.3rem; display:flex; align-items:center; justify-content:center; transition:transform 0.15s, box-shadow 0.2s; color:#fff; }
+  .btn-main:hover { transform:scale(1.06); }
+  .btn-main:active { transform:scale(0.97); }
+  .btn-main.work { background:var(--work); box-shadow:0 4px 16px rgba(239,68,68,0.3); }
+  .btn-main.brk { background:var(--break); box-shadow:0 4px 16px rgba(22,163,74,0.3); }
+  .btn-main.long { background:var(--long); box-shadow:0 4px 16px rgba(14,165,233,0.3); }
+  .btn-sec { width:42px; height:42px; border-radius:50%; border:1.5px solid var(--border); background:var(--surface); color:var(--text2); font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+  .btn-sec:hover { border-color:var(--border2); color:var(--text); }
+
+  .motivation { font-size:0.82rem; color:var(--text2); font-style:italic; min-height:1.3rem; transition:opacity 0.3s; }
+
+  /* STATS */
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:0.65rem; margin-bottom:1rem; animation: fadeUp 0.4s 0.1s ease both; }
+  .stat-card { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:0.85rem; text-align:center; }
+  .stat-num { font-family:'Fraunces',serif; font-size:1.6rem; font-weight:700; line-height:1; margin-bottom:0.2rem; }
+  .stat-label { font-size:0.65rem; color:var(--text2); font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+  .stat-card.s-work .stat-num { color:var(--work); }
+  .stat-card.s-break .stat-num { color:var(--break); }
+  .stat-card.s-time .stat-num { color:var(--long); }
+
+  /* SESSIONS DOTS */
+  .sessions-row { display:flex; gap:6px; justify-content:center; margin-bottom:1rem; flex-wrap:wrap; animation: fadeUp 0.4s 0.12s ease both; }
+  .session-dot { width:10px; height:10px; border-radius:50%; background:var(--border); transition:background 0.3s; }
+  .session-dot.done { background:var(--work); }
+  .session-dot.break-done { background:var(--break); }
+
+  /* SETTINGS */
+  .settings-toggle { display:flex; align-items:center; gap:8px; font-size:0.75rem; font-weight:600; color:var(--text2); cursor:pointer; padding:0.6rem 0; border-top:1px solid var(--border); user-select:none; transition:color 0.2s; animation: fadeUp 0.4s 0.14s ease both; }
+  .settings-toggle:hover { color:var(--text); }
+  .settings-arrow { transition:transform 0.2s; }
+  .settings-arrow.open { transform:rotate(90deg); }
+
+  .settings-panel { display:none; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:1.25rem; margin-top:0.75rem; animation:fadeIn 0.2s ease; }
+  .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; }
+  .setting-group { display:flex; flex-direction:column; gap:0.4rem; }
+  .setting-label { font-size:0.68rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text2); }
+  .setting-input { padding:0.6rem 0.9rem; border:1.5px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:0.88rem; color:var(--text); background:var(--bg); outline:none; transition:border-color 0.2s; width:100%; }
+  .setting-input:focus { border-color:var(--work); }
+  .btn-apply { margin-top:0.75rem; width:100%; padding:0.65rem; background:var(--text); border:none; border-radius:10px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:700; cursor:pointer; transition:opacity 0.2s; }
+  .btn-apply:hover { opacity:0.85; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:#fff; border-radius:12px; padding:0.75rem 1.25rem; font-size:0.85rem; font-weight:600; opacity:0; transition:all 0.3s; pointer-events:none; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.15); z-index:999; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">🍅 Pomodoro Timer</div>
+  <a href="index.html" class="nav-back">← Dashboard</a>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-title">Pomodoro Timer</div>
+    <div class="page-sub">Pracuj v blocích, odpočívej, opakuj.</div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab work active" onclick="setMode('work',this)">🔥 Práce</button>
+    <button class="mode-tab brk" onclick="setMode('brk',this)">☕ Pauza</button>
+    <button class="mode-tab long" onclick="setMode('long',this)">🌿 Dlouhá pauza</button>
+  </div>
+
+  <div class="timer-card">
+    <div class="ring-wrap">
+      <svg class="ring-svg" viewBox="0 0 200 200">
+        <circle class="ring-bg" cx="100" cy="100" r="88"/>
+        <circle class="ring-fill" id="ring" cx="100" cy="100" r="88" stroke="var(--work)" stroke-dasharray="552.9" stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-center">
+        <div class="timer-display" id="timer-display">25:00</div>
+        <div class="timer-mode-label" id="mode-label">Čas pracovat</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-sec" onclick="resetTimer()" title="Reset">↺</button>
+      <button class="btn-main work" id="play-btn" onclick="toggleTimer()">▶</button>
+      <button class="btn-sec" onclick="skipMode()" title="Přeskočit">⏭</button>
+    </div>
+
+    <div class="motivation" id="motivation">Připrav se na soustředění! 💪</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card s-work"><div class="stat-num" id="stat-sessions">0</div><div class="stat-label">Bloků</div></div>
+    <div class="stat-card s-break"><div class="stat-num" id="stat-breaks">0</div><div class="stat-label">Pauz</div></div>
+    <div class="stat-card s-time"><div class="stat-num" id="stat-time">0</div><div class="stat-label">Minut</div></div>
+  </div>
+
+  <div class="sessions-row" id="sessions-row"></div>
+
+  <div class="settings-toggle" onclick="toggleSettings()">
+    <span class="settings-arrow" id="settings-arrow">▶</span>
+    Nastavení časů
+  </div>
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-grid">
+      <div class="setting-group">
+        <label class="setting-label">Práce (min)</label>
+        <input class="setting-input" type="number" id="set-work" value="25" min="1" max="60">
+      </div>
+      <div class="setting-group">
+        <label class="setting-label">Krátká pauza (min)</label>
+        <input class="setting-input" type="number" id="set-break" value="5" min="1" max="30">
+      </div>
+      <div class="setting-group">
+        <label class="setting-label">Dlouhá pauza (min)</label>
+        <input class="setting-input" type="number" id="set-long" value="15" min="5" max="60">
+      </div>
+      <div class="setting-group">
+        <label class="setting-label">Bloků do dl. pauzy</label>
+        <input class="setting-input" type="number" id="set-cycle" value="4" min="2" max="8">
+      </div>
+    </div>
+    <button class="btn-apply" onclick="applySettings()">Použít nastavení</button>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var WORK_MSGS = ['Soustřeď se, zvládneš to! 💪','Jeden krok za druhým. 🚀','Mozek v plném výkonu! 🧠','Žádné rušení, jen práce. 🎯','Tenhle blok bude tvůj! ⚡','Soustředění = úspěch. 📚'];
+var BREAK_MSGS = ['Zasloužená pauza! ☕','Protáhni se a oddechni. 🧘','Napiješ se vody? 💧','Dej mozku odpočinek. 🌿'];
+var DONE_MSGS = ['Výborně! Další blok za tebou! 🏆','Neuvěřitelné soustředění! 🔥','Jsi stroj! Tak dál! 💪','Produktivita na max! 🚀'];
+
+var settings = { work:25, breakTime:5, longBreak:15, cycle:4 };
+var mode = 'work';
+var timeLeft = 25*60;
+var totalTime = 25*60;
+var running = false;
+var interval = null;
+var sessionsCompleted = 0;
+var breaksCompleted = 0;
+var totalMinutes = 0;
+var audioCtx = null;
+
+function getAudio() { if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function playSound(type) {
+  try {
+    var ctx=getAudio(), osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if(type==='done'){osc.frequency.setValueAtTime(523,ctx.currentTime);osc.frequency.setValueAtTime(659,ctx.currentTime+0.15);osc.frequency.setValueAtTime(784,ctx.currentTime+0.3);gain.gain.setValueAtTime(0.3,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.8);}
+    else{osc.frequency.setValueAtTime(440,ctx.currentTime);gain.gain.setValueAtTime(0.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.3);}
+  } catch(e){}
+}
+
+function setMotivation(msgs) {
+  var el=document.getElementById('motivation');
+  el.style.opacity='0';
+  setTimeout(function(){ el.textContent=msgs[Math.floor(Math.random()*msgs.length)]; el.style.opacity='1'; },300);
+}
+
+function updateDisplay() {
+  var m=Math.floor(timeLeft/60), s=timeLeft%60;
+  document.getElementById('timer-display').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  var progress=1-(timeLeft/totalTime);
+  document.getElementById('ring').style.strokeDashoffset=552.9*(1-progress);
+  document.title=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+' — Pomodoro';
+}
+
+function setMode(m, btn) {
+  mode=m; running=false; clearInterval(interval);
+  document.getElementById('play-btn').textContent='▶';
+  if(m==='work') timeLeft=settings.work*60;
+  else if(m==='brk') timeLeft=settings.breakTime*60;
+  else timeLeft=settings.longBreak*60;
+  totalTime=timeLeft;
+  var colors={work:'var(--work)',brk:'var(--break)',long:'var(--long)'};
+  var labels={work:'Čas pracovat',brk:'Krátká pauza',long:'Dlouhá pauza'};
+  document.getElementById('ring').style.stroke=colors[m];
+  document.getElementById('mode-label').textContent=labels[m];
+  var playBtn=document.getElementById('play-btn');
+  playBtn.className='btn-main '+(m==='long'?'long':m==='brk'?'brk':'work');
+  document.querySelectorAll('.mode-tab').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  setMotivation(m==='work'?WORK_MSGS:BREAK_MSGS);
+  updateDisplay();
+}
+
+function toggleTimer() {
+  if(running){
+    running=false; clearInterval(interval);
+    document.getElementById('play-btn').textContent='▶';
+    setMotivation(['Pauza... Hned zpět! 💡']);
+  } else {
+    running=true;
+    document.getElementById('play-btn').textContent='⏸';
+    setMotivation(mode==='work'?WORK_MSGS:BREAK_MSGS);
+    interval=setInterval(function(){
+      if(timeLeft<=0){ timerDone(); return; }
+      timeLeft--;
+      if(mode==='work') totalMinutes=Math.floor((settings.work*60-timeLeft)/60+sessionsCompleted*settings.work);
+      updateDisplay(); updateStats();
+    },1000);
+  }
+}
+
+function timerDone() {
+  clearInterval(interval); running=false;
+  document.getElementById('play-btn').textContent='▶';
+  playSound('done');
+  if(mode==='work'){
+    sessionsCompleted++; updateSessions();
+    showToast(DONE_MSGS[Math.floor(Math.random()*DONE_MSGS.length)]);
+    totalMinutes+=settings.work;
+    if(sessionsCompleted%settings.cycle===0) setMode('long',document.querySelectorAll('.mode-tab')[2]);
+    else setMode('brk',document.querySelectorAll('.mode-tab')[1]);
+  } else {
+    if(mode==='brk') breaksCompleted++;
+    showToast('Pauza skončila! Zpět do práce! 💪');
+    setMode('work',document.querySelectorAll('.mode-tab')[0]);
+  }
+  updateStats();
+}
+
+function resetTimer() {
+  clearInterval(interval); running=false;
+  document.getElementById('play-btn').textContent='▶';
+  if(mode==='work') timeLeft=settings.work*60;
+  else if(mode==='brk') timeLeft=settings.breakTime*60;
+  else timeLeft=settings.longBreak*60;
+  totalTime=timeLeft;
+  updateDisplay();
+  setMotivation(mode==='work'?WORK_MSGS:BREAK_MSGS);
+}
+
+function skipMode() { clearInterval(interval); running=false; timerDone(); }
+
+function updateStats() {
+  document.getElementById('stat-sessions').textContent=sessionsCompleted;
+  document.getElementById('stat-breaks').textContent=breaksCompleted;
+  document.getElementById('stat-time').textContent=totalMinutes;
+}
+
+function updateSessions() {
+  var row=document.getElementById('sessions-row');
+  row.innerHTML='';
+  var total=Math.max(sessionsCompleted+3,settings.cycle);
+  for(var i=0;i<total;i++){
+    var dot=document.createElement('div');
+    dot.className='session-dot'+(i<sessionsCompleted?' done':'');
+    row.appendChild(dot);
+  }
+}
+
+function toggleSettings() {
+  var panel=document.getElementById('settings-panel');
+  var arrow=document.getElementById('settings-arrow');
+  var open=panel.style.display==='block';
+  panel.style.display=open?'none':'block';
+  arrow.classList.toggle('open',!open);
+}
+
+function applySettings() {
+  settings.work=Math.max(1,parseInt(document.getElementById('set-work').value)||25);
+  settings.breakTime=Math.max(1,parseInt(document.getElementById('set-break').value)||5);
+  settings.longBreak=Math.max(5,parseInt(document.getElementById('set-long').value)||15);
+  settings.cycle=Math.max(2,parseInt(document.getElementById('set-cycle').value)||4);
+  setMode(mode,document.querySelector('.mode-tab.active'));
+  showToast('Nastavení uloženo! ✓');
+  toggleSettings();
+}
+
+function showToast(msg) {
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },3000);
+}
+
+updateDisplay(); updateSessions();
+</script>
+</body>
+</html>
