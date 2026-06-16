@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plánovač učení</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f7f5; --surface: #fff; --border: #e8e8e4; --border2: #d4d0c8;
+    --text: #1a1a1a; --text2: #6b7280; --muted: #bbb;
+    --accent: #8b5cf6; --accent-bg: #f5f3ff; --accent-border: #ddd6fe;
+    --c1: #ef4444; --c1bg: #fef2f2; --c1border: #fecaca;
+    --c2: #f59e0b; --c2bg: #fffbeb; --c2border: #fde68a;
+    --c3: #16a34a; --c3bg: #f0fdf4; --c3border: #bbf7d0;
+    --c4: #0ea5e9; --c4bg: #f0f9ff; --c4border: #bae6fd;
+    --radius: 14px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  .navbar { background: rgba(247,247,245,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .navbar-brand { display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+  .nav-back { font-size:0.8rem; color:var(--text2); text-decoration:none; font-weight:600; transition:color 0.2s; }
+  .nav-back:hover { color:var(--text); }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  .page-header { margin-bottom: 2rem; animation: fadeUp 0.4s ease; }
+  .page-title { font-family:'Fraunces',serif; font-size:clamp(1.6rem,3vw,2.2rem); font-weight:700; letter-spacing:-0.03em; margin-bottom:0.35rem; }
+  .page-sub { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+  /* TABS */
+  .tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:4px; animation: fadeUp 0.4s 0.03s ease both; }
+  .tab { flex:1; padding:0.55rem; border:none; border-radius:9px; background:transparent; font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.2s; text-align:center; }
+  .tab.active { background:var(--accent); color:#fff; box-shadow:0 2px 8px rgba(139,92,246,0.3); }
+
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* FORM */
+  .form-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:1.5rem; margin-bottom:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.04); animation: fadeUp 0.4s 0.05s ease both; }
+  .form-card-title { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text2); margin-bottom:1rem; }
+  .form-label { display:block; font-size:0.72rem; font-weight:600; color:var(--text2); letter-spacing:0.04em; text-transform:uppercase; margin-bottom:0.45rem; }
+  .form-input { width:100%; padding:0.65rem 0.9rem; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.88rem; color:var(--text); background:var(--bg); outline:none; transition:border-color 0.2s; }
+  .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(139,92,246,0.08); }
+  .form-input::placeholder { color:var(--muted); }
+  .form-select { width:100%; padding:0.65rem 0.9rem; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.82rem; color:var(--text); background:var(--bg); outline:none; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:2rem; transition:border-color 0.2s; }
+  .form-select:focus { border-color:var(--accent); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-bottom:0.85rem; }
+  .form-group { display:flex; flex-direction:column; gap:0.4rem; }
+
+  /* SUBJECT LIST */
+  .subjects-list { display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem; }
+  .subject-item { background:var(--bg); border:1.5px solid var(--border); border-radius:10px; padding:0.75rem 1rem; display:flex; align-items:center; gap:0.75rem; animation: slideIn 0.2s ease; }
+  .subject-color { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .subject-name { flex:1; font-size:0.88rem; font-weight:600; }
+  .subject-deadline { font-size:0.75rem; color:var(--text2); }
+  .subject-urgency { font-size:0.65rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:20px; }
+  .urgency-high { background:var(--c1bg); color:var(--c1); border:1px solid var(--c1border); }
+  .urgency-med { background:var(--c2bg); color:var(--c2); border:1px solid var(--c2border); }
+  .urgency-low { background:var(--c3bg); color:var(--c3); border:1px solid var(--c3border); }
+  .btn-remove { width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-size:0.8rem; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
+  .btn-remove:hover { background:var(--c1bg); border-color:var(--c1border); color:var(--c1); }
+
+  .btn-add { display:flex; align-items:center; gap:6px; padding:0.6rem 1rem; border:1.5px dashed var(--border); border-radius:10px; background:transparent; font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.2s; width:100%; justify-content:center; margin-bottom:1rem; }
+  .btn-add:hover { border-color:var(--accent); color:var(--accent); }
+
+  .btn-generate { width:100%; padding:0.85rem; background:var(--accent); border:none; border-radius:12px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:700; cursor:pointer; transition:opacity 0.2s, transform 0.15s; box-shadow:0 4px 14px rgba(139,92,246,0.28); display:flex; align-items:center; justify-content:center; gap:8px; }
+  .btn-generate:hover:not(:disabled) { opacity:0.88; transform:translateY(-1px); }
+  .btn-generate:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+  .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+
+  .error-box { display:none; background:var(--c1bg); border:1.5px solid var(--c1border); border-radius:10px; padding:0.9rem 1rem; font-size:0.8rem; color:var(--c1); margin-top:0.75rem; }
+
+  /* PLAN VIEW */
+  .plan-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:0.75rem; animation: fadeUp 0.4s ease; }
+  .plan-title { font-family:'Fraunces',serif; font-size:1.3rem; font-weight:700; letter-spacing:-0.02em; }
+  .plan-meta { font-size:0.75rem; color:var(--text2); margin-top:2px; }
+  .btn-replan { display:flex; align-items:center; gap:6px; padding:0.5rem 0.9rem; border:1.5px solid var(--border); border-radius:10px; background:var(--surface); font-family:'DM Sans',sans-serif; font-size:0.78rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all 0.2s; }
+  .btn-replan:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* TODAY CARD */
+  .today-card { background:var(--accent); border-radius:var(--radius); padding:1.5rem; margin-bottom:1.25rem; color:#fff; animation: fadeUp 0.4s 0.05s ease both; }
+  .today-label { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; opacity:0.75; margin-bottom:0.5rem; }
+  .today-title { font-family:'Fraunces',serif; font-size:1.5rem; font-weight:700; letter-spacing:-0.03em; margin-bottom:1rem; }
+  .today-tasks { display:flex; flex-direction:column; gap:0.5rem; }
+  .today-task { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.15); border-radius:10px; padding:0.65rem 0.9rem; font-size:0.85rem; font-weight:500; }
+  .today-task-dot { width:8px; height:8px; border-radius:50%; background:#fff; flex-shrink:0; }
+  .today-task-time { font-size:0.72rem; opacity:0.75; margin-left:auto; white-space:nowrap; }
+
+  /* WEEK GRID */
+  .week-title { font-size:0.68rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text2); margin-bottom:0.75rem; animation: fadeUp 0.4s 0.08s ease both; }
+  .week-grid { display:flex; flex-direction:column; gap:0.65rem; animation: fadeUp 0.4s 0.1s ease both; }
+  .day-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:border-color 0.2s; }
+  .day-card:hover { border-color:var(--border2); }
+  .day-card.today-day { border-color:var(--accent); }
+  .day-header { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1.1rem; background:var(--bg); border-bottom:1px solid var(--border); }
+  .day-name { font-size:0.82rem; font-weight:700; flex:1; }
+  .day-date { font-size:0.72rem; color:var(--text2); }
+  .day-badge { font-size:0.62rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:20px; background:var(--accent-bg); color:var(--accent); border:1px solid var(--accent-border); }
+  .day-tasks { padding:0.75rem 1.1rem; display:flex; flex-direction:column; gap:0.45rem; }
+  .day-task { display:flex; align-items:flex-start; gap:10px; font-size:0.82rem; line-height:1.45; }
+  .day-task-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+  .day-task-sub { font-size:0.72rem; color:var(--text2); margin-top:1px; }
+  .day-free { font-size:0.78rem; color:var(--muted); font-style:italic; padding:0.25rem 0; }
+
+  /* SUBJECT COLORS */
+  .col-0 { background:#8b5cf6; }
+  .col-1 { background:#ef4444; }
+  .col-2 { background:#f59e0b; }
+  .col-3 { background:#16a34a; }
+  .col-4 { background:#0ea5e9; }
+  .col-5 { background:#ec4899; }
+  .col-6 { background:#f97316; }
+  .col-7 { background:#14b8a6; }
+
+  @media (max-width:600px) { .form-row { grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">📅 Plánovač učení</div>
+  <a href="index.html" class="nav-back">← Dashboard</a>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-title">Plánovač učení</div>
+    <div class="page-sub">Zadej předměty a termíny — AI sestaví plán co a kdy se učit.</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('subjects', this)">📚 Předměty a termíny</button>
+    <button class="tab" id="tab-plan-btn" onclick="switchTab('plan', this)">📅 Plán učení</button>
+  </div>
+
+  <!-- SUBJECTS VIEW -->
+  <div class="view active" id="view-subjects">
+    <div class="form-card">
+      <div class="form-card-title">Přidat předmět / zkoušku</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Název předmětu</label>
+          <input class="form-input" id="sub-name" placeholder="např. Matematika">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Termín (datum)</label>
+          <input class="form-input" type="date" id="sub-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Obtížnost pro tebe</label>
+          <select class="form-select" id="sub-diff">
+            <option value="easy">😊 Lehký</option>
+            <option value="medium" selected>😐 Střední</option>
+            <option value="hard">😰 Těžký</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0.85rem">
+        <label class="form-label">Co se potřebuješ naučit</label>
+        <input class="form-input" id="sub-topics" placeholder="např. Kvadratické rovnice, funkce, geometrie...">
+      </div>
+      <button class="btn-add" onclick="addSubject()">+ Přidat předmět</button>
+    </div>
+
+    <div class="subjects-list" id="subjects-list"></div>
+
+    <div class="form-card" style="margin-top:0.5rem">
+      <div class="form-card-title">Nastavení týdne</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Volný čas denně (hod)</label>
+          <select class="form-select" id="hours-per-day">
+            <option value="1">1 hodina</option>
+            <option value="2" selected>2 hodiny</option>
+            <option value="3">3 hodiny</option>
+            <option value="4">4 hodiny</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Styl učení</label>
+          <select class="form-select" id="study-style">
+            <option value="balanced">⚖️ Vyvážený</option>
+            <option value="urgent">🔥 Podle urgentnosti</option>
+            <option value="hard-first">💪 Těžší nejdřív</option>
+            <option value="easy-first">😊 Lehčí nejdřív</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Volné dny</label>
+          <select class="form-select" id="free-days">
+            <option value="none">Žádné</option>
+            <option value="weekend" selected>Víkend volný</option>
+            <option value="sunday">Jen neděle volná</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-generate" id="gen-btn" onclick="generatePlan()">📅 Vygenerovat plán učení</button>
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <!-- PLAN VIEW -->
+  <div class="view" id="view-plan">
+    <div class="plan-header">
+      <div>
+        <div class="plan-title">Tvůj plán učení</div>
+        <div class="plan-meta" id="plan-meta"></div>
+      </div>
+      <button class="btn-replan" onclick="switchTab('subjects', document.querySelectorAll(\'.tab\')[0])">✏️ Upravit</button>
+    </div>
+
+    <div class="today-card" id="today-card" style="display:none">
+      <div class="today-label">Dnes</div>
+      <div class="today-title" id="today-title"></div>
+      <div class="today-tasks" id="today-tasks"></div>
+    </div>
+
+    <div class="week-title">Plán na celý týden</div>
+    <div class="week-grid" id="week-grid"></div>
+  </div>
+</main>
+
+<script>
+var subjects = [];
+var generatedPlan = null;
+var COLORS = ['col-0','col-1','col-2','col-3','col-4','col-5','col-6','col-7'];
+var COLOR_HEX = ['#8b5cf6','#ef4444','#f59e0b','#16a34a','#0ea5e9','#ec4899','#f97316','#14b8a6'];
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('view-' + id).classList.add('active');
+}
+
+function getDaysUntil(dateStr) {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var d = new Date(dateStr + 'T00:00:00');
+  return Math.ceil((d - today) / 86400000);
+}
+
+function getUrgency(dateStr) {
+  var days = getDaysUntil(dateStr);
+  if (days <= 3) return 'high';
+  if (days <= 7) return 'med';
+  return 'low';
+}
+
+function addSubject() {
+  var name = document.getElementById('sub-name').value.trim();
+  var date = document.getElementById('sub-date').value;
+  var diff = document.getElementById('sub-diff').value;
+  var topics = document.getElementById('sub-topics').value.trim();
+
+  if (!name) { alert('Zadej název předmětu.'); return; }
+  if (!date) { alert('Zadej datum termínu.'); return; }
+
+  subjects.push({ name: name, date: date, diff: diff, topics: topics, color: subjects.length % 8 });
+  document.getElementById('sub-name').value = '';
+  document.getElementById('sub-date').value = '';
+  document.getElementById('sub-topics').value = '';
+  renderSubjects();
+}
+
+function removeSubject(i) {
+  subjects.splice(i, 1);
+  renderSubjects();
+}
+
+function renderSubjects() {
+  var list = document.getElementById('subjects-list');
+  list.innerHTML = '';
+  if (subjects.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem;">Zatím žádné předměty. Přidej první!</div>';
+    return;
+  }
+  subjects.forEach(function(s, i) {
+    var days = getDaysUntil(s.date);
+    var urgency = getUrgency(s.date);
+    var urgLabel = urgency === 'high' ? '🔥 Brzy!' : urgency === 'med' ? '⚡ Tento týden' : '✓ Máš čas';
+    var urgClass = 'urgency-' + (urgency === 'high' ? 'high' : urgency === 'med' ? 'med' : 'low');
+    var diffLabels = { easy: 'Lehký', medium: 'Střední', hard: 'Těžký' };
+    var el = document.createElement('div');
+    el.className = 'subject-item';
+    el.innerHTML =
+      '<div class="subject-color ' + COLORS[s.color] + '"></div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="subject-name">' + escHtml(s.name) + '</div>' +
+        '<div class="subject-deadline">Termín: ' + new Date(s.date+'T00:00:00').toLocaleDateString('cs-CZ',{day:'numeric',month:'long'}) + ' (' + days + ' dní) · ' + diffLabels[s.diff] + '</div>' +
+        (s.topics ? '<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">' + escHtml(s.topics) + '</div>' : '') +
+      '</div>' +
+      '<span class="subject-urgency ' + urgClass + '">' + urgLabel + '</span>' +
+      '<button class="btn-remove" onclick="removeSubject(' + i + ')">×</button>';
+    list.appendChild(el);
+  });
+}
+
+function generatePlan() {
+  if (subjects.length === 0) { showError('Přidej alespoň jeden předmět.'); return; }
+
+  var hoursPerDay = document.getElementById('hours-per-day').value;
+  var studyStyle = document.getElementById('study-style').value;
+  var freeDays = document.getElementById('free-days').value;
+
+  var today = new Date();
+  var todayStr = today.toLocaleDateString('cs-CZ', { weekday:'long', day:'numeric', month:'long' });
+
+  var subjectsInfo = subjects.map(function(s) {
+    var days = getDaysUntil(s.date);
+    return s.name + ' (termín: ' + s.date + ', za ' + days + ' dní, obtížnost: ' + s.diff + (s.topics ? ', témata: ' + s.topics : '') + ')';
+  }).join('\n');
+
+  var styleMap = { balanced: 'balanced across all subjects', urgent: 'prioritize by urgency/deadline', 'hard-first': 'start with harder subjects each day', 'easy-first': 'start with easier subjects each day' };
+  var freeDaysMap = { none: 'no free days', weekend: 'Saturday and Sunday are free', sunday: 'Sunday is free' };
+
+  hideError();
+  setLoading(true);
+
+  var prompt = 'You are a study planning expert. Create a detailed 7-day study plan for a Czech high school student.\n\nToday is: ' + todayStr + ' (' + today.toISOString().split('T')[0] + ')\nAvailable study time per day: ' + hoursPerDay + ' hours\nStudy style: ' + styleMap[studyStyle] + '\nFree days: ' + freeDaysMap[freeDays] + '\n\nSubjects and deadlines:\n' + subjectsInfo + '\n\nCreate a practical daily plan. Respond ONLY with valid JSON, no markdown:\n{\n  "summary": "Brief overview of the plan strategy",\n  "days": [\n    {\n      "date": "2024-01-15",\n      "dayName": "Pondělí",\n      "isFree": false,\n      "tasks": [\n        {\n          "subject": "Subject name",\n          "task": "Specific task description",\n          "duration": "45 min",\n          "colorIndex": 0\n        }\n      ]\n    }\n  ]\n}\n\nIMPORTANT: colorIndex must match the subject index from the list (0-based). All text in Czech. Make tasks specific and actionable. 7 days total.';
+
+  fetch('https://moje-api.matejda83.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2500,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    var raw = data.content.map(function(i){ return i.text||''; }).join('');
+    var clean = raw.replace(/```json|```/g,'').trim();
+    var plan = JSON.parse(clean);
+    generatedPlan = plan;
+    renderPlan(plan);
+    switchTab('plan', document.querySelectorAll('.tab')[1]);
+  })
+  .catch(function(e) { showError('Něco se pokazilo. Zkus to znovu.'); })
+  .finally(function(){ setLoading(false); });
+}
+
+function renderPlan(plan) {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var todayStr = today.toISOString().split('T')[0];
+
+  document.getElementById('plan-meta').textContent = plan.summary || '';
+
+  // Today card
+  var todayDay = plan.days.find(function(d){ return d.date === todayStr; });
+  var todayCard = document.getElementById('today-card');
+  if (todayDay && !todayDay.isFree && todayDay.tasks && todayDay.tasks.length > 0) {
+    todayCard.style.display = 'block';
+    document.getElementById('today-title').textContent = 'Co dnes: ' + todayDay.tasks.length + ' ' + (todayDay.tasks.length === 1 ? 'blok' : todayDay.tasks.length < 5 ? 'bloky' : 'bloků');
+    var todayTasksEl = document.getElementById('today-tasks');
+    todayTasksEl.innerHTML = '';
+    todayDay.tasks.forEach(function(t) {
+      var el = document.createElement('div');
+      el.className = 'today-task';
+      el.innerHTML = '<div class="today-task-dot"></div><span>' + escHtml(t.subject) + ' — ' + escHtml(t.task) + '</span><span class="today-task-time">' + escHtml(t.duration) + '</span>';
+      todayTasksEl.appendChild(el);
+    });
+  } else {
+    todayCard.style.display = 'none';
+  }
+
+  // Week grid
+  var grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+  plan.days.forEach(function(day) {
+    var isToday = day.date === todayStr;
+    var card = document.createElement('div');
+    card.className = 'day-card' + (isToday ? ' today-day' : '');
+
+    var dateObj = new Date(day.date + 'T00:00:00');
+    var dateLabel = dateObj.toLocaleDateString('cs-CZ', { day:'numeric', month:'short' });
+
+    var headerHTML = '<div class="day-header">' +
+      '<div class="day-name">' + escHtml(day.dayName) + (isToday ? ' <span style="font-size:0.65rem;color:var(--accent)">● dnes</span>' : '') + '</div>' +
+      '<div class="day-date">' + dateLabel + '</div>' +
+      (day.tasks && day.tasks.length > 0 ? '<span class="day-badge">' + day.tasks.length + ' ' + (day.tasks.length === 1 ? 'blok' : 'bloků') + '</span>' : '') +
+      '</div>';
+
+    var bodyHTML = '<div class="day-tasks">';
+    if (day.isFree) {
+      bodyHTML += '<div class="day-free">🌿 Volný den — odpočinek</div>';
+    } else if (!day.tasks || day.tasks.length === 0) {
+      bodyHTML += '<div class="day-free">Žádné úkoly</div>';
+    } else {
+      day.tasks.forEach(function(t) {
+        var colorHex = COLOR_HEX[t.colorIndex % COLOR_HEX.length] || '#8b5cf6';
+        bodyHTML += '<div class="day-task">' +
+          '<div class="day-task-dot" style="background:' + colorHex + '"></div>' +
+          '<div><div>' + escHtml(t.subject) + ' — ' + escHtml(t.task) + '</div>' +
+          '<div class="day-task-sub">' + escHtml(t.duration) + '</div></div>' +
+          '</div>';
+      });
+    }
+    bodyHTML += '</div>';
+
+    card.innerHTML = headerHTML + bodyHTML;
+    grid.appendChild(card);
+  });
+}
+
+function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function setLoading(on) {
+  var btn = document.getElementById('gen-btn');
+  btn.disabled = on;
+  btn.innerHTML = on ? '<div class="spinner"></div> Generuji plán...' : '📅 Vygenerovat plán učení';
+}
+function showError(msg) { var b=document.getElementById('error-box'); b.textContent=msg; b.style.display='block'; }
+function hideError() { document.getElementById('error-box').style.display='none'; }
+
+renderSubjects();
+</script>
+</body>
+</html>
